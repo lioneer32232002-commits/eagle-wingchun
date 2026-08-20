@@ -618,7 +618,7 @@ ${ctaBand()}
 function pageClasses() {
   const items = SYLLABUS;
   const body = `
-${hero({ img: 'team-01.jpg', kicker: '課程', title: '<span class="nb">每週二、五</span>　<span class="nb">橋下見</span>', sub: clauses('上課以實戰對練方式進行，讓觀念、功力同時進步。'), pos: 'center 55%' })}
+${hero({ img: 'team-01.jpg', kicker: '課程', title: '<span class="nb">每週二、五</span>　<span class="nb">橋下見</span>', sub: clauses('上課以實戰對練方式進行，讓觀念、功力同時進步。'), pos: 'center 25%' })}
 
 <section class="sec">
   <div class="wrap">
