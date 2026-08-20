@@ -2,6 +2,19 @@
 
 台北文山．萬壽橋下。詠春教學網站，靜態網頁，部署於 Cloudflare Pages。
 
+## 頁面
+
+| 網址 | 內容 |
+| --- | --- |
+| `/` | 進站頁：三段大圖大字（`build.mjs` 的 `pageIntro`） |
+| `/home/` | 完整首頁 |
+| `/about/` | 關於師父、師承 |
+| `/classes/` | 課程資訊、授課內容 |
+| `/writings/` | 師父手記列表 |
+| `/writings/<slug>/` | 單篇手記 |
+
+網站上的介紹文字都取自師父原話或舊站（nccu-wing-chun.weebly.com）原文，新增文案時請沿用這個原則。
+
 ## 資料夾
 
 ```
@@ -79,5 +92,7 @@ Cloudflare Pages 連到這個 GitHub repo，設定：
 | Framework preset | None |
 | Build command | `npm run build` |
 | Build output directory | `dist` |
+
+第一次連接：Cloudflare 後台 → Workers & Pages → Create → Pages → Connect to Git → 選 `eagle-wingchun`。
 
 之後 push 到 `main` 就會自動重新部署。
