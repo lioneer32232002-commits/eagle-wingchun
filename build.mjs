@@ -321,7 +321,7 @@ const hero = ({ img, imgTall, kicker, title, sub, cta = '', tall = false, pos = 
 
 const card = (a) => `
 <a class="card" href="/writings/${a.slug}/">
-  <div class="card__bg" style="background-image:url('/assets/img/${a.image}')"></div>
+  <div class="card__bg" style="background-image:url('/assets/img/${a.image}');background-position:${a.posCard || 'center 38%'}"></div>
   <div class="card__veil"></div>
   <div class="card__in">
     <p class="card__date">${fmtDate(a.date)}</p>
