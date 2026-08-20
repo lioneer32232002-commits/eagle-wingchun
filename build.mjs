@@ -21,6 +21,28 @@ export const SITE = {
   fb: 'https://www.facebook.com/huang.ying.zhe.322652',
   place: '台北市文山區．萬壽橋下',
   time: '每週二、週五　晚上 08:15 – 10:15',
+  // 搜尋引擎用的結構化資料。地址與時間都跟上面的 place / time 是同一件事，
+  // 只是拆成 Google 看得懂的欄位。
+  seo: {
+    sifu: '黃英哲',
+    locality: '台北市',
+    region: '文山區',
+    street: '萬壽橋下',
+    country: 'TW',
+    // 萬壽橋（景美溪）橋下，用來給 Google 地圖對位
+    lat: 24.9903,
+    lon: 121.5535,
+    // 上課時段（24 小時制，給 openingHoursSpecification 用）
+    days: ['Tuesday', 'Friday'],
+    opens: '20:15',
+    closes: '22:15',
+    // 同一個門派／同一位師父在網路上的其他身分，讓 Google 把它們併成同一個實體
+    sameAs: ['https://www.facebook.com/huang.ying.zhe.322652', 'https://nccu-wing-chun.weebly.com/'],
+    founded: '2011',
+    // Search Console「HTML 標記」那個驗證碼，填了才會出現在每一頁的 <head>。
+    // 用 DNS 或上傳檔案驗證的話這裡留空就好。
+    googleVerify: '',
+  },
 };
 
 /* ---------- 工具 ---------- */
@@ -60,14 +82,179 @@ function typo(t) {
 
 /** 只處理標籤之間的文字，不動標籤與屬性 */
 function typoHtml(html) {
-  return html.replace(/>([^<]+)</g, (m, text) => {
-    const parts = text.split(/(&[a-zA-Z#0-9]+;)/); // 保護 HTML 實體
-    return '>' + parts.map((x, i) => (i % 2 ? x : typo(x))).join('') + '<';
+  // <script> 裡是 JSON-LD，中文排版規則會把它改壞（半形逗號冒號都會被轉全形），
+  // 先抽出來放一邊，排版跑完再放回去
+  const stash = [];
+  const masked = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, (m) => {
+    stash.push(m);
+    return `␞${stash.length - 1}␞`;
   });
+  return masked
+    .replace(/>([^<]+)</g, (m, text) => {
+      const parts = text.split(/(&[a-zA-Z#0-9]+;)/); // 保護 HTML 實體
+      return '>' + parts.map((x, i) => (i % 2 ? x : typo(x))).join('') + '<';
+    })
+    .replace(/␞(\d+)␞/g, (m, i) => stash[Number(i)]);
 }
 
 
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+/**
+ * 從 JPEG 檔頭讀出寬高，`<img>` 才能帶 width/height。
+ * 沒有這兩個屬性，圖載入前後版面會跳動（CLS），Google 的頁面體驗分數會被扣。
+ */
+const dimCache = new Map();
+function imgSize(name) {
+  if (dimCache.has(name)) return dimCache.get(name);
+  let size = null;
+  try {
+    const buf = fs.readFileSync(path.join(ROOT, 'assets/img', name));
+    for (let i = 2; i < buf.length - 9; ) {
+      if (buf[i] !== 0xff) { i++; continue; }
+      const marker = buf[i + 1];
+      // SOF0–SOF15，扣掉 DHT(c4) / JPG(c8) / DAC(cc) 這幾個不是影格標頭的
+      if (marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker)) {
+        size = { h: buf.readUInt16BE(i + 5), w: buf.readUInt16BE(i + 7) };
+        break;
+      }
+      i += 2 + buf.readUInt16BE(i + 2);
+    }
+  } catch {
+    /* 圖不在就算了，只是少了 width/height */
+  }
+  dimCache.set(name, size);
+  return size;
+}
+
+const SM_W = 960; // 跟 tools/images.mjs 的 SM 是同一個數字
+
+/** webp 是 `npm run img` 產生的，沒跑過就退回原本的 jpg */
+const has = (f) => fs.existsSync(path.join(ROOT, 'assets/img', f));
+const variants = (name) => {
+  const base = name.replace(/\.jpe?g$/i, '');
+  const w = imgSize(name)?.w || 1920;
+  return {
+    jpg: name,
+    w,
+    webp: has(`${base}.webp`) && `${base}.webp`,
+    // 原圖本來就比 SM_W 窄的話，小圖跟原圖一樣大，列進 srcset 只是多餘
+    sm: w > SM_W && has(`${base}-sm.webp`) && `${base}-sm.webp`,
+  };
+};
+
+/** srcset：小圖固定 SM_W，大圖用原圖實際寬度 */
+const srcsetOf = (v) => [v.sm && `/assets/img/${v.sm} ${SM_W}w`, `/assets/img/${v.webp} ${v.w}w`].filter(Boolean).join(', ');
+
+/**
+ * 一律帶 width/height 與 alt 的圖片標籤。
+ * width/height 沒帶的話，圖載入前後版面會跳動（CLS），Google 會扣頁面體驗分數。
+ * 有 webp 就包成 <picture>，手機拿 960px 那一版，不用扛 1920px 的原圖。
+ */
+const img = (name, alt, { cls = '', eager = false, sizes = '(max-width: 860px) 100vw, 50vw' } = {}) => {
+  const d = imgSize(name);
+  const v = variants(name);
+  const tag = `<img src="/assets/img/${v.jpg}" alt="${esc(alt)}"${cls ? ` class="${cls}"` : ''}${
+    d ? ` width="${d.w}" height="${d.h}"` : ''
+  } ${eager ? 'fetchpriority="high" decoding="async"' : 'loading="lazy" decoding="async"'}>`;
+  if (!v.webp) return tag;
+  return `<picture><source type="image/webp" srcset="${srcsetOf(v)}" sizes="${sizes}">${tag}</picture>`;
+};
+
+/**
+ * 背景圖。把三個檔名交給 CSS 的自訂屬性，實際要用哪一個由 .bgimg 那組規則決定
+ * （支援 image-set 的瀏覽器吃 webp，窄畫面再換成 960px 那版）。
+ */
+const bg = (name, pos) => {
+  const v = variants(name);
+  const vars = [
+    `--bg-j:url('/assets/img/${v.jpg}')`,
+    v.webp && `--bg-w:url('/assets/img/${v.webp}')`,
+    v.sm && `--bg-s:url('/assets/img/${v.sm}')`,
+  ].filter(Boolean);
+  return `${vars.join(';')};${pos ? `background-position:${pos}` : ''}`;
+};
+
+/** JSON-LD 區塊；undefined 的欄位會被 JSON.stringify 自動丟掉 */
+const jsonld = (...nodes) =>
+  nodes
+    .filter(Boolean)
+    .map((n) => `<script type="application/ld+json">${JSON.stringify(n).replace(/</g, '\\u003c')}</script>`)
+    .join('\n');
+
+const abs = (p) => (p.startsWith('http') ? p : SITE.url + p);
+
+/* ---------- 結構化資料 ---------- */
+
+/** 拳館本身：Google 在地搜尋（「台北 詠春」）主要吃這一塊 */
+const ldSchool = () => ({
+  '@context': 'https://schema.org',
+  '@type': ['SportsActivityLocation', 'SportsClub'],
+  '@id': `${SITE.url}/#school`,
+  name: SITE.name,
+  alternateName: ['鷹捷詠春搏擊', '鷹捷詠春拳館', '黃系詠春 台北', 'Eagle Wing Chun'],
+  description: SITE.desc,
+  url: `${SITE.url}/`,
+  telephone: `+886-${SITE.phoneRaw.slice(1)}`,
+  image: [`${SITE.url}/assets/img/og.jpg`, `${SITE.url}/assets/img/hero-chisau.jpg`],
+  logo: `${SITE.url}/apple-touch-icon.png`,
+  foundingDate: SITE.seo.founded,
+  sameAs: SITE.seo.sameAs,
+  address: {
+    '@type': 'PostalAddress',
+    addressCountry: SITE.seo.country,
+    addressRegion: SITE.seo.locality,
+    addressLocality: SITE.seo.region,
+    streetAddress: SITE.seo.street,
+  },
+  geo: { '@type': 'GeoCoordinates', latitude: SITE.seo.lat, longitude: SITE.seo.lon },
+  areaServed: [
+    { '@type': 'City', name: '台北市' },
+    { '@type': 'AdministrativeArea', name: '文山區' },
+    { '@type': 'AdministrativeArea', name: '新店區' },
+  ],
+  openingHoursSpecification: [
+    {
+      '@type': 'OpeningHoursSpecification',
+      dayOfWeek: SITE.seo.days.map((d) => `https://schema.org/${d}`),
+      opens: SITE.seo.opens,
+      closes: SITE.seo.closes,
+    },
+  ],
+  founder: { '@id': `${SITE.url}/about/#sifu` },
+  employee: { '@id': `${SITE.url}/about/#sifu` },
+  knowsAbout: ['詠春拳', '黃系詠春', '詠春拳教學', '黐手', '木人樁', '小念頭', '尋橋', '標指', '八斬刀', '六點半棍', '防身術'],
+  sport: '詠春拳',
+});
+
+/** 師父本人：讓「黃英哲 詠春」這種人名查詢對得上 */
+const ldSifu = () => ({
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  '@id': `${SITE.url}/about/#sifu`,
+  name: SITE.seo.sifu,
+  jobTitle: '詠春拳教練',
+  description: '鷹捷詠春黃英哲師父，師承葉問—黃淳樑—林海龍一脈的黃系詠春，台北文山區授課。',
+  url: `${SITE.url}/about/`,
+  image: `${SITE.url}/assets/img/sifu.jpg`,
+  telephone: `+886-${SITE.phoneRaw.slice(1)}`,
+  sameAs: [SITE.fb],
+  worksFor: { '@id': `${SITE.url}/#school` },
+  knowsAbout: ['詠春拳', '黃系詠春', '黐手', '木人樁', '結構應力', '標指'],
+  knowsLanguage: ['zh-Hant', 'zh'],
+});
+
+/** 麵包屑：搜尋結果的網址列會顯示成「鷹捷詠春 › 課程」 */
+const ldCrumbs = (trail) => ({
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [{ name: SITE.name, url: '/' }, ...trail].map((x, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    name: x.name,
+    item: abs(x.url),
+  })),
+});
 const rm = (p) => fs.rmSync(p, { recursive: true, force: true });
 const write = (rel, html) => {
   const out = path.join(DIST, rel);
@@ -218,11 +405,74 @@ const fmtDate = (d) => {
 };
 
 /* ---------- 版型 ---------- */
-function layout({ title, desc, url, image, body, bodyClass = '', transparentNav = false }) {
+const FONTS =
+  'https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@400;600;700&display=swap';
+
+/**
+ * 首屏那張大圖先排隊下載（LCP）。它是 CSS 背景，瀏覽器要等樣式表算完才會發現它，
+ * 先 preload 可以把發現時間往前拉。
+ * 沒有 webp 的瀏覽器會因為 type 對不上而略過這一行，改走原本的 jpg。
+ */
+const preloadImg = (name, media) => {
+  const v = variants(name);
+  const m = media ? ` media="${media}"` : '';
+  if (!v.webp) return `<link rel="preload" as="image" href="/assets/img/${v.jpg}"${m} fetchpriority="high">`;
+  return `<link rel="preload" as="image" type="image/webp" imagesrcset="${srcsetOf(
+    v
+  )}" imagesizes="100vw"${m} fetchpriority="high">`;
+};
+
+/**
+ * preload 可以給檔名，或給 { wide, tall } —— 首頁的 hero 在窄畫面會換成直式原圖
+ * （.hero--swap），兩張要分開 preload，不然手機會預載一張它根本不顯示的圖，
+ * 真正的 LCP 反而沒排到隊。斷點跟 style.css 的 767px 對齊。
+ */
+const preloadTag = (p) =>
+  typeof p === 'string'
+    ? preloadImg(p)
+    : [preloadImg(p.wide, '(min-width: 768px)'), preloadImg(p.tall, '(max-width: 767px)')].join('\n');
+
+/** <head> 裡跟內容無關的固定區塊：圖示、字型、樣式 */
+const verifyMeta = SITE.seo.googleVerify
+  ? `<meta name="google-site-verification" content="${SITE.seo.googleVerify}">
+`
+  : '';
+
+const headAssets = (preload) => `${verifyMeta}<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="/assets/css/style.css?v=${ASSET_V}">
+${preload ? `${preloadTag(preload)}\n` : ''}<link rel="preload" as="style" href="${FONTS}" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="${FONTS}"></noscript>`;
+
+/**
+ * @param titleTag  完整的 <title>，要放關鍵字的話從這裡給；不給就用「頁名｜站名」
+ * @param preload   首屏那張大圖的檔名，會做 preload（LCP）
+ * @param ld        這一頁額外的結構化資料節點
+ * @param crumbs    麵包屑，[{ name, url }]，站名那一層會自動補在最前面
+ */
+function layout({
+  title,
+  titleTag,
+  desc,
+  url,
+  image,
+  body,
+  bodyClass = '',
+  transparentNav = false,
+  preload,
+  ld = [],
+  crumbs,
+  ogType = 'website',
+  extraMeta = '',
+}) {
   title = typo(title);
   desc = typo(desc);
-  const fullTitle = title === SITE.name ? `${SITE.name}｜${SITE.tagline}` : `${title}｜${SITE.name}`;
+  const fullTitle = typo(titleTag || (title === SITE.name ? `${SITE.name}｜${SITE.tagline}` : `${title}｜${SITE.name}`));
   const og = SITE.url + (image || '/assets/img/og.jpg');
+  const nodes = [...ld, crumbs ? ldCrumbs(crumbs) : null];
   return `<!DOCTYPE html>
 <html lang="zh-Hant-TW">
 <head>
@@ -230,28 +480,25 @@ function layout({ title, desc, url, image, body, bodyClass = '', transparentNav 
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>${esc(fullTitle)}</title>
 <meta name="description" content="${esc(desc)}">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
 <meta name="theme-color" content="#12100e">
 <link rel="canonical" href="${SITE.url}${url}">
-<meta property="og:type" content="website">
+<meta property="og:type" content="${ogType}">
 <meta property="og:site_name" content="${SITE.name}">
 <meta property="og:locale" content="zh_TW">
 <meta property="og:title" content="${esc(fullTitle)}">
 <meta property="og:description" content="${esc(desc)}">
 <meta property="og:url" content="${SITE.url}${url}">
 <meta property="og:image" content="${og}">
+<meta property="og:image:alt" content="${esc(title)}｜${SITE.name}">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${esc(fullTitle)}">
 <meta name="twitter:description" content="${esc(desc)}">
 <meta name="twitter:image" content="${og}">
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="icon" href="/favicon.ico" sizes="32x32">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/css/style.css?v=${ASSET_V}">
+${extraMeta}${headAssets(preload)}
+${jsonld(...nodes)}
 </head>
 <body class="${bodyClass}">
 ${nav(transparentNav)}
@@ -303,10 +550,10 @@ function footer() {
 /* 共用元件 */
 const hero = ({ img, imgTall, kicker, title, sub, cta = '', tall = false, pos = 'center 40%', posTall = 'center 50%' }) => `
 <section class="hero${tall ? ' hero--tall' : ''}${imgTall ? ' hero--swap' : ''}">
-  <div class="hero__bg" style="background-image:url('/assets/img/${img}');background-position:${pos}"></div>
+  <div class="hero__bg bgimg" style="${bg(img, pos)}"></div>
   ${
     imgTall
-      ? `<div class="hero__bg hero__bg--tall" style="background-image:url('/assets/img/${imgTall}');background-position:${posTall}"></div>`
+      ? `<div class="hero__bg hero__bg--tall bgimg" style="${bg(imgTall, posTall)}"></div>`
       : ''
   }
   <div class="hero__veil"></div>
@@ -321,7 +568,7 @@ const hero = ({ img, imgTall, kicker, title, sub, cta = '', tall = false, pos = 
 
 const card = (a) => `
 <a class="card" href="/writings/${a.slug}/">
-  <div class="card__bg" style="background-image:url('/assets/img/${a.image}');background-position:${a.posCard || 'center 38%'}"></div>
+  <div class="card__bg bgimg" style="${bg(a.image, a.posCard || 'center 38%')}"></div>
   <div class="card__veil"></div>
   <div class="card__in">
     <p class="card__date">${fmtDate(a.date)}</p>
@@ -358,7 +605,7 @@ ${hero({
 
 <section class="sec">
   <div class="wrap split">
-    <div class="split__img"><img src="/assets/img/sifu.jpg" alt="黃英哲師父" loading="lazy" width="934" height="1028"></div>
+    <div class="split__img">${img('sifu.jpg', '鷹捷詠春黃英哲師父，台北文山詠春拳教學')}</div>
     <div class="split__txt">
       <p class="kicker kicker--dark">關於師父</p>
       <h2>黃英哲</h2>
@@ -392,10 +639,14 @@ ${ctaBand()}
 `;
   return layout({
     title: SITE.name,
+    titleTag: '鷹捷詠春｜台北詠春拳教學．黃英哲師父親授',
     desc: SITE.desc,
     url: '/home/',
     body,
     transparentNav: true,
+    preload: { wide: 'hero-chisau.jpg', tall: 'hero-chisau-tall.jpg' },
+    crumbs: [{ name: '首頁', url: '/home/' }],
+    ld: [ldSchool(), ldSifu()],
   });
 }
 
@@ -442,6 +693,89 @@ const SYLLABUS = [
   },
 ];
 
+/**
+ * 常見問題。每一則的答案都只用站上已經有的事實（時間、地點、費用、上課方式、
+ * 授課內容、師承），沒有新增師父沒說過的東西。
+ */
+const FAQ = [
+  {
+    q: '鷹捷詠春在哪裡上課？',
+    a: `台北市文山區，萬壽橋下。`,
+  },
+  {
+    q: '上課時間是什麼時候？',
+    a: `每週二、週五，晚上 08:15 – 10:15。`,
+  },
+  {
+    q: '學費怎麼算？',
+    a: `費用到現場直接諮詢。`,
+  },
+  {
+    q: '上課怎麼進行？',
+    a: `上課以實戰對練方式進行，讓觀念、功力同時進步，強調實用、意志及體能。教法著重詠春的基本觀念以及身體上的開發，並根據學生的個性及身材給予不同的調整。`,
+  },
+  {
+    q: '教哪些內容？',
+    a: `套路教學（小念頭、尋橋、標指、木人樁）、手法線位運用、朝型步法運用、身體結構運用，以及刀、棍。`,
+  },
+  {
+    q: '鷹捷詠春是哪一系的詠春？',
+    a: `師承葉問在香港的大弟子講手王黃淳樑，再傳林海龍，屬黃系詠春一脈。`,
+  },
+  {
+    q: '想上課要怎麼聯絡？',
+    a: `打電話給師父 <a href="tel:${SITE.phoneRaw}">${SITE.phone}</a>，或到 <a href="${SITE.fb}" target="_blank" rel="noopener">Facebook</a> 找黃英哲。`,
+  },
+];
+
+/** 課程本身：Google 有機會把它顯示成課程卡片 */
+const ldCourse = () => ({
+  '@context': 'https://schema.org',
+  '@type': 'Course',
+  '@id': `${SITE.url}/classes/#course`,
+  name: '詠春拳教學課程',
+  description:
+    '以實用為目的，重視傳統功力訓練，授予完整的詠春觀念。套路教學（小念頭、尋橋、標指、木人樁）、手法線位運用、朝型步法運用、身體結構運用、刀棍。',
+  url: `${SITE.url}/classes/`,
+  inLanguage: 'zh-Hant',
+  teaches: SYLLABUS.map((v) => `${v.t}：${v.d}`),
+  provider: { '@id': `${SITE.url}/#school` },
+  offers: {
+    '@type': 'Offer',
+    category: '現場諮詢',
+    availability: 'https://schema.org/InStock',
+    url: `${SITE.url}/classes/`,
+  },
+  hasCourseInstance: {
+    '@type': 'CourseInstance',
+    courseMode: 'Onsite',
+    courseWorkload: 'PT2H',
+    instructor: { '@id': `${SITE.url}/about/#sifu` },
+    location: { '@id': `${SITE.url}/#school` },
+    courseSchedule: {
+      '@type': 'Schedule',
+      byDay: SITE.seo.days.map((d) => `https://schema.org/${d}`),
+      startTime: SITE.seo.opens,
+      endTime: SITE.seo.closes,
+      repeatFrequency: 'P1W',
+      repeatCount: 2,
+      scheduleTimezone: 'Asia/Taipei',
+    },
+  },
+});
+
+/** 常見問題：搜尋結果有機會展開成折疊清單 */
+const ldFaq = () => ({
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  '@id': `${SITE.url}/classes/#faq`,
+  mainEntity: FAQ.map((f) => ({
+    '@type': 'Question',
+    name: typo(f.q),
+    acceptedAnswer: { '@type': 'Answer', text: typo(f.a.replace(/<[^>]*>/g, '')) },
+  })),
+});
+
 const syllabusList = () => `
     <ol class="syl">
       ${SYLLABUS.map(
@@ -458,7 +792,7 @@ const facts = () => `
 
 const ctaBand = () => `
 <section class="cta">
-  <div class="cta__bg" style="background-image:url('/assets/img/group-night.jpg')"></div>
+  <div class="cta__bg bgimg" style="${bg('group-night.jpg')}"></div>
   <div class="cta__veil"></div>
   <div class="wrap cta__in">
     <h2><span class="nb">真真實實可以保護</span><span class="nb">自己跟家人的技能</span></h2>
@@ -470,7 +804,13 @@ const ctaBand = () => `
   </div>
 </section>`;
 
-/* 進站頁：大圖大字，三段介紹 */
+/* 進站頁：大圖大字，三段介紹。
+   它跟 /home/ 是兩個不同的頁，title 與 description 要分開寫，
+   否則 Google 會判成重複內容，兩頁互相稀釋。 */
+const GATE_TITLE = '台北詠春拳教學｜鷹捷詠春．黃英哲師父親授';
+const GATE_DESC =
+  '台北詠春拳教學，鷹捷詠春黃英哲師父親授。師承葉問—黃淳樑—林海龍一脈的黃系詠春，以實用為目的，重視傳統功力訓練。台北市文山區萬壽橋下，每週二、五晚上 08:15–10:15。';
+
 function pageIntro() {
   const scenes = [
     {
@@ -493,7 +833,7 @@ function pageIntro() {
       title: '拳理即生理',
       lines: [
         '練拳是要符合身體的運作。',
-        '每週二、週五 晚上 08:15–10:15，文山區萬壽橋下。',
+        '每週二、週五 晚上 08:15–10:15，台北市文山區萬壽橋下。',
         '上課以實戰對練方式進行，讓觀念、功力同時進步。',
       ],
       more: '課程資訊',
@@ -512,12 +852,12 @@ function pageIntro() {
 <div class="intro">
   <div class="intro__brand">
     ${seal}
-    <div><b>鷹捷詠春</b><span>黃英哲師父親授</span></div>
+    <div><h1>鷹捷詠春</h1><span>黃英哲師父親授</span></div>
   </div>
   ${scenes
     .map(
       (v) => `<section class="scene">
-    <div class="scene__bg" style="background-image:url('/assets/img/${v.img}');background-position:${v.pos}"></div>
+    <div class="scene__bg bgimg" style="${bg(v.img, v.pos)}"></div>
     <div class="scene__veil"></div>
     <div class="scene__in">
       <p class="scene__n"><i></i>${v.n}</p>
@@ -529,7 +869,7 @@ function pageIntro() {
     )
     .join('')}
   <section class="scene scene--end">
-    <div class="scene__bg" style="background-image:url('/assets/img/team-01.jpg');background-position:center 55%"></div>
+    <div class="scene__bg bgimg" style="${bg('team-01.jpg', 'center 55%')}"></div>
     <div class="scene__veil scene__veil--end"></div>
     <div class="scene__in">
       <p class="kicker">鷹捷詠春</p>
@@ -547,30 +887,40 @@ function pageIntro() {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>鷹捷詠春｜黃英哲師父親授</title>
-<meta name="description" content="${esc(SITE.desc)}">
+<title>${esc(GATE_TITLE)}</title>
+<meta name="description" content="${esc(GATE_DESC)}">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
 <meta name="theme-color" content="#12100e">
 <link rel="canonical" href="${SITE.url}/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="${SITE.name}">
 <meta property="og:locale" content="zh_TW">
-<meta property="og:title" content="鷹捷詠春｜黃英哲師父親授">
-<meta property="og:description" content="${esc(SITE.desc)}">
+<meta property="og:title" content="${esc(GATE_TITLE)}">
+<meta property="og:description" content="${esc(GATE_DESC)}">
 <meta property="og:url" content="${SITE.url}/">
 <meta property="og:image" content="${SITE.url}/assets/img/og.jpg">
+<meta property="og:image:alt" content="鷹捷詠春｜台北文山詠春拳教學">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="鷹捷詠春｜黃英哲師父親授">
-<meta name="twitter:description" content="${esc(SITE.desc)}">
+<meta name="twitter:title" content="${esc(GATE_TITLE)}">
+<meta name="twitter:description" content="${esc(GATE_DESC)}">
 <meta name="twitter:image" content="${SITE.url}/assets/img/og.jpg">
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="icon" href="/favicon.ico" sizes="32x32">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/css/style.css?v=${ASSET_V}">
+${headAssets('hero-bridge.jpg')}
+${jsonld(
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    '@id': `${SITE.url}/#website`,
+    name: SITE.name,
+    alternateName: '鷹捷詠春搏擊',
+    url: `${SITE.url}/`,
+    inLanguage: 'zh-Hant',
+    publisher: { '@id': `${SITE.url}/#school` },
+  },
+  ldSchool(),
+  ldSifu()
+)}
 </head>
 <body class="is-gate">
 <main id="main">
@@ -603,12 +953,14 @@ ${hero({ img: 'sifu-form.jpg', kicker: '關於師父', title: '黃英哲', sub: 
       <li><b>師公　林海龍</b><span>與其兄長林文學（Gary Lam）共創香港迪暉詠春搏擊拳館，培養優秀拳手無數；現居台灣。</span></li>
       <li class="on"><b>師父　黃英哲</b><span>鷹捷詠春．台北文山</span></li>
     </ol>
+    <blockquote class="lesson__q lineage__q"><p>${clauses('初期  我的確有發揚黃系詠春的想法')}</p>
+    <a class="lesson__ref" href="/writings/shi-wu-nian/">師父手記〈十五年了〉<span>→</span></a></blockquote>
   </div>
 </section>
 
 <section class="sec">
   <div class="wrap split split--rev">
-    <div class="split__img"><img src="/assets/img/dummy-train.jpg" alt="鷹捷詠春拳館內打木人樁" loading="lazy" width="1080" height="1920"></div>
+    <div class="split__img">${img('dummy-train.jpg', '鷹捷詠春學生練習詠春木人樁')}</div>
     <div class="split__txt">
       <p class="kicker kicker--dark">教學</p>
       <h2>教拳其實是教育工作</h2>
@@ -621,7 +973,17 @@ ${hero({ img: 'sifu-form.jpg', kicker: '關於師父', title: '黃英哲', sub: 
 
 ${ctaBand()}
 `;
-  return layout({ title: '關於師父', desc: '鷹捷詠春黃英哲師父，師承葉問—黃淳樑—林海龍一脈，以實用為目的，重視傳統功力訓練，授予完整的詠春觀念。', url: '/about/', image: '/assets/img/sifu-form.jpg', body });
+  return layout({
+    title: '關於師父',
+    titleTag: '黃英哲師父｜黃系詠春．葉問—黃淳樑—林海龍一脈｜鷹捷詠春',
+    desc: '鷹捷詠春黃英哲師父，師承葉問—黃淳樑—林海龍一脈的黃系詠春，以實用為目的，重視傳統功力訓練，授予完整的詠春觀念。台北文山區授課。',
+    url: '/about/',
+    image: '/assets/img/sifu-form.jpg',
+    body,
+    preload: 'sifu-form.jpg',
+    crumbs: [{ name: '關於師父', url: '/about/' }],
+    ld: [ldSifu(), ldSchool()],
+  });
 }
 
 function pageClasses() {
@@ -643,7 +1005,7 @@ ${hero({ img: 'team-01.jpg', kicker: '課程', title: '<span class="nb">每週�
       ${items
         .map(
           (v) => `<article class="lesson">
-        <div class="lesson__img"><img src="/assets/img/${v.img}" alt="${v.t}" loading="lazy"></div>
+        <div class="lesson__img">${img(v.img, `詠春拳${v.t} — ${v.d}`)}</div>
         <div class="lesson__txt">
           <span class="syl__n">${v.n}</span>
           <h3>${v.t}</h3>
@@ -672,9 +1034,29 @@ ${hero({ img: 'team-01.jpg', kicker: '課程', title: '<span class="nb">每週�
   </div>
 </section>
 
+<section class="sec sec--paper2">
+  <div class="wrap prose">
+    <p class="kicker kicker--dark">常見問題</p>
+    <h2 class="sec__t sec__t--dark">上課前想先知道的事</h2>
+    <dl class="faq">
+      ${FAQ.map((f) => `<dt>${f.q}</dt><dd>${f.a}</dd>`).join('\n      ')}
+    </dl>
+  </div>
+</section>
+
 ${ctaBand()}
 `;
-  return layout({ title: '課程資訊', desc: '鷹捷詠春課程：每週二、五晚間 20:15–22:15，台北市文山區萬壽橋下。套路教學、手法線位、朝型步法、身體結構、刀棍隨機教化。', url: '/classes/', image: '/assets/img/team-01.jpg', body });
+  return layout({
+    title: '課程資訊',
+    titleTag: '台北詠春拳教學課程｜文山萬壽橋下．每週二、五｜鷹捷詠春',
+    desc: '台北詠春拳教學：每週二、五晚上 08:15–10:15，台北市文山區萬壽橋下。小念頭、尋橋、標指、木人樁套路教學，手法線位、朝型步法、身體結構與刀棍，以實戰對練方式進行。',
+    url: '/classes/',
+    image: '/assets/img/team-01.jpg',
+    body,
+    preload: 'team-01.jpg',
+    crumbs: [{ name: '課程資訊', url: '/classes/' }],
+    ld: [ldCourse(), ldFaq(), ldSchool(), ldSifu()],
+  });
 }
 
 function pageWritings(arts) {
@@ -687,7 +1069,42 @@ ${hero({ img: 'bridge-empty.jpg', kicker: '師父手記', title: '武道若夢',
 </section>
 ${ctaBand()}
 `;
-  return layout({ title: '師父手記', desc: '黃英哲師父的練功隨筆與教學心得：三合印、信心、放下、三種放鬆、標指與鞭法。', url: '/writings/', image: '/assets/img/bridge-empty.jpg', body });
+  return layout({
+    title: '師父手記',
+    titleTag: '師父手記｜詠春拳理與練功隨筆｜鷹捷詠春 黃英哲',
+    desc: `黃英哲師父的詠春練功隨筆與教學心得，共 ${arts.length} 篇：${arts
+      .slice(0, 5)
+      .map((a) => a.title)
+      .join('、')}。`,
+    url: '/writings/',
+    image: '/assets/img/bridge-empty.jpg',
+    body,
+    preload: 'bridge-empty.jpg',
+    crumbs: [{ name: '師父手記', url: '/writings/' }],
+    ld: [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'Blog',
+        '@id': `${SITE.url}/writings/#blog`,
+        name: '師父手記',
+        description: '黃英哲師父的詠春練功隨筆與教學心得。',
+        url: `${SITE.url}/writings/`,
+        inLanguage: 'zh-Hant',
+        author: { '@id': `${SITE.url}/about/#sifu` },
+        publisher: { '@id': `${SITE.url}/#school` },
+        blogPost: arts.map((a) => ({
+          '@type': 'BlogPosting',
+          headline: a.title,
+          url: `${SITE.url}/writings/${a.slug}/`,
+          datePublished: a.date,
+        })),
+      },
+      // author / publisher 是 @id 參照，被指到的節點要在同一頁上，
+      // 否則 Google 只讀到一個沒有名字的空節點
+      ldSifu(),
+      ldSchool(),
+    ],
+  });
 }
 
 /** 系列文章導覽：同一個 series 的篇章依 part 排序 */
@@ -716,7 +1133,7 @@ function pageArticle(a, prev, next, all) {
   const body = `
 <article class="art">
   <header class="art__hero">
-    <div class="art__bg" style="background-image:url('/assets/img/${a.image}');background-position:${a.pos || 'center 22%'}"></div>
+    <div class="art__bg bgimg" style="${bg(a.image, a.pos || 'center 22%')}"></div>
     <div class="art__veil"></div>
     <div class="wrap art__head">
       <p class="kicker"><a href="/writings/">師父手記</a></p>
@@ -737,12 +1154,55 @@ function pageArticle(a, prev, next, all) {
 </article>
 ${ctaBand()}
 `;
+  // excerpt 常常只有十來個字，對搜尋結果的摘要太短，補上出處讓它成為完整一句
+  const desc = `${a.excerpt}　— 鷹捷詠春 黃英哲師父手記${a.series ? `〈${a.series}〉系列` : ''}。`;
+  const d = imgSize(a.image);
   return layout({
     title: a.title,
-    desc: a.excerpt,
+    titleTag: `${a.title}｜師父手記｜鷹捷詠春 黃英哲`,
+    desc,
     url: `/writings/${a.slug}/`,
     image: `/assets/img/${a.image}`,
     body,
+    ogType: 'article',
+    preload: a.image,
+    extraMeta: `<meta property="article:published_time" content="${a.date}">
+<meta property="article:author" content="${SITE.seo.sifu}">
+<meta property="article:section" content="詠春拳">
+`,
+    crumbs: [{ name: '師父手記', url: '/writings/' }, { name: a.title, url: `/writings/${a.slug}/` }],
+    ld: [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'BlogPosting',
+        '@id': `${SITE.url}/writings/${a.slug}/#post`,
+        headline: a.title,
+        description: a.excerpt,
+        url: `${SITE.url}/writings/${a.slug}/`,
+        mainEntityOfPage: `${SITE.url}/writings/${a.slug}/`,
+        datePublished: a.date,
+        dateModified: a.date,
+        inLanguage: 'zh-Hant',
+        image: d
+          ? { '@type': 'ImageObject', url: `${SITE.url}/assets/img/${a.image}`, width: d.w, height: d.h }
+          : `${SITE.url}/assets/img/${a.image}`,
+        author: { '@id': `${SITE.url}/about/#sifu` },
+        publisher: { '@id': `${SITE.url}/#school` },
+        // Blog 那個節點在 /writings/，不在這一頁上，所以名稱跟網址要寫齊，
+        // 不能只丟一個 @id 過去
+        isPartOf: {
+          '@type': 'Blog',
+          '@id': `${SITE.url}/writings/#blog`,
+          name: '師父手記',
+          url: `${SITE.url}/writings/`,
+        },
+        articleSection: a.series || '詠春拳理',
+        keywords: ['詠春拳', '黃系詠春', a.title],
+        wordCount: [...a.body.replace(/\s/g, '')].length,
+      },
+      ldSifu(),
+      ldSchool(),
+    ],
   });
 }
 
@@ -760,16 +1220,46 @@ write('classes/index.html', pageClasses());
 write('writings/index.html', pageWritings(arts));
 arts.forEach((a, i) => write(`writings/${a.slug}/index.html`, pageArticle(a, arts[i + 1], arts[i - 1], arts)));
 
-// sitemap
-const urls = ['/', '/home/', '/about/', '/classes/', '/writings/', ...arts.map((a) => `/writings/${a.slug}/`)];
+// sitemap：lastmod 讓 Google 知道哪幾頁動過，priority 說明站內的輕重
+const newest = arts[0]?.date;
+const urls = [
+  { u: '/', lastmod: newest, priority: '1.0', changefreq: 'monthly' },
+  { u: '/home/', lastmod: newest, priority: '0.9', changefreq: 'monthly' },
+  { u: '/classes/', lastmod: newest, priority: '0.9', changefreq: 'monthly' },
+  { u: '/about/', lastmod: newest, priority: '0.8', changefreq: 'yearly' },
+  { u: '/writings/', lastmod: newest, priority: '0.7', changefreq: 'weekly' },
+  ...arts.map((a) => ({ u: `/writings/${a.slug}/`, lastmod: a.date, priority: '0.6', changefreq: 'yearly' })),
+];
 write(
   'sitemap.xml',
   `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${urls.map((u) => `  <url><loc>${SITE.url}${u}</loc></url>`).join('\n')}
+${urls
+  .map(
+    (x) =>
+      `  <url><loc>${SITE.url}${x.u}</loc>${
+        x.lastmod ? `<lastmod>${x.lastmod}</lastmod>` : ''
+      }<changefreq>${x.changefreq}</changefreq><priority>${x.priority}</priority></url>`
+  )
+  .join('\n')}
 </urlset>`
 );
-write('robots.txt', `User-agent: *\nAllow: /\n\nSitemap: ${SITE.url}/sitemap.xml\n`);
+write(
+  'robots.txt',
+  `User-agent: *
+Allow: /
+
+# 這些爬蟲只會吃頻寬，網站本身沒有它們要的東西
+User-agent: AhrefsBot
+Disallow: /
+User-agent: SemrushBot
+Disallow: /
+User-agent: MJ12bot
+Disallow: /
+
+Sitemap: ${SITE.url}/sitemap.xml
+`
+);
 
 // 保險：檢查有沒有寬到會撐破手機畫面的不可斷行詞組
 const tooWide = [];
@@ -783,6 +1273,15 @@ for (const f of fs.readdirSync(DIST, { recursive: true })) {
 if (tooWide.length) {
   console.warn(`⚠ 有 ${tooWide.length} 個不可斷行詞組可能撐破手機版：`);
   tooWide.slice(0, 10).forEach((x) => console.warn('  ' + x));
+}
+
+// 保險：新加的圖如果沒跑過 npm run img，手機還是會扛 1920px 的原圖
+const noWebp = fs
+  .readdirSync(path.join(ROOT, 'assets/img'))
+  .filter((f) => f.endsWith('.jpg') && !variants(f).webp);
+if (noWebp.length) {
+  console.warn(`⚠ 這 ${noWebp.length} 張圖還沒有 webp，跑一次 npm run img：`);
+  noWebp.slice(0, 10).forEach((x) => console.warn('  ' + x));
 }
 
 console.log(`✓ 已建置 ${urls.length} 個頁面 → dist/`);

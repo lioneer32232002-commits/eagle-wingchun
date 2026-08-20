@@ -139,9 +139,41 @@ ffmpeg -ss 52 -i "影片/檔名.mp4" -frames:v 1 -q:v 3 assets/img/新檔名.jpg
 
 **手記裡沒提到的項目就不要硬湊。**
 
+## 配圖要先跑 `npm run img`
+
+放進 `assets/img/` 的新 jpg，要跑一次：
+
+```bash
+npm run img
+```
+
+它用 ffmpeg 產生兩份 webp：原尺寸的 `X.webp`，和 960px 的 `X-sm.webp`（手機用）。
+jpg 原檔不會被動到，webp 要一起 commit —— Cloudflare 的建置環境沒有 ffmpeg，不能在那邊產。
+
+`build.mjs` 的 `img()` 會包成 `<picture>`，背景圖的 `bg()` 會寫成 `--bg-j / --bg-w / --bg-s`
+三個自訂屬性，由 `style.css` 的 `.bgimg` 決定實際用哪一張。忘了跑的話建置會警告，
+網站還是能動，只是手機要扛 1920px 的原圖（首頁曾經因此吃掉 1.2MB）。
+
+**`.bgimg` 的基準一定要留 jpg。** 舊版 Safari 認得 `image-set()` 但不認得裡面的 `type()`，
+直接寫 image-set 會讓整條宣告失效，背景變全黑。
+
+## SEO
+
+改文案時順手要顧的幾件事：
+
+| 東西 | 在哪裡 | 注意 |
+| --- | --- | --- |
+| `<title>` | `layout()` 的 `titleTag` | 每頁都要不一樣。`/` 與 `/home/` 是兩頁，標題重複的話 Google 會判成重複內容 |
+| 結構化資料 | `ldSchool` / `ldSifu` / `ldCourse` / `ldFaq` | 上課時間地點改了，`SITE.seo` 要跟著改，不然 Google 拿到的是舊資訊 |
+| 常見問題 | `build.mjs` 的 `FAQ` | 答案只能用站上已經有的事實，跟文案規則一樣，不要自己加 |
+| sitemap | `build.mjs` 最下面 | `lastmod` 直接取文章日期，不用手動維護 |
+
+`SITE.seo.googleVerify` 填 Search Console 給的驗證碼，就會自動出現在每一頁的 `<head>`。
+
 ## 網站基本資料
 
 電話、FB、上課時間地點、網址，都在 `build.mjs` 最上面的 `SITE`。
+`SITE.seo` 是同一份資料拆給搜尋引擎看的版本（地址欄位、24 小時制的上課時段、經緯度）。
 
 ## 常用指令
 

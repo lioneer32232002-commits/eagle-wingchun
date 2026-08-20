@@ -38,6 +38,20 @@ body {
   overflow-wrap: break-word;
 }
 img { max-width: 100%; height: auto; display: block; }
+
+/* ---------- 背景圖 ----------
+   檔名由 build.mjs 寫進 --bg-j / --bg-w / --bg-s 三個自訂屬性。
+   預設吃 jpg；瀏覽器認得帶 type() 的 image-set 才換成 webp，
+   窄畫面再換成 960px 那一版（1920px 的原圖手機根本用不到）。
+   基準一定要是 jpg —— 舊版 Safari 認得 image-set 但不認得 type()，
+   直接寫 image-set 會整條宣告失效，背景就整片空白。 */
+.bgimg { background-image: var(--bg-j); }
+@supports (background-image: image-set(url("a.webp") type("image/webp"))) {
+  .bgimg { background-image: image-set(var(--bg-w, var(--bg-j)) type("image/webp"), var(--bg-j) type("image/jpeg")); }
+  @media (max-width: 768px) {
+    .bgimg { background-image: image-set(var(--bg-s, var(--bg-w, var(--bg-j))) type("image/webp"), var(--bg-j) type("image/jpeg")); }
+  }
+}
 a { color: inherit; }
 h1, h2, h3, h4 { font-family: var(--serif); font-weight: 700; line-height: 1.35; letter-spacing: 0.04em; margin: 0; text-wrap: balance; }
 p { margin: 0 0 1.2em; }
@@ -323,6 +337,10 @@ p:last-child { margin-bottom: 0; }
 .lesson__ref:hover span { transform: translateX(5px); }
 
 /* ---------- 師承 ---------- */
+/* 師承下面那段引文在深色底上，要把 .lesson__q 的深色字翻過來 */
+.lineage__q { max-width: 660px; border-left-color: rgba(196, 84, 66, 0.5); }
+.lineage__q p { color: rgba(245, 242, 234, 0.82); }
+.lineage__q .lesson__ref { color: var(--seal-l); border-color: rgba(196, 84, 66, 0.4); }
 .tree { list-style: none; margin: 0; padding: 0; max-width: 660px; }
 .tree li { position: relative; padding: 0 0 34px 34px; border-left: 1px solid var(--line-d); }
 .tree li:last-child { border-left-color: transparent; padding-bottom: 0; }
@@ -339,6 +357,20 @@ p:last-child { margin-bottom: 0; }
 .prose { max-width: 760px; }
 .prose h2 { font-size: clamp(24px, 3.4vw, 32px); margin-bottom: 0.9em; letter-spacing: 0.1em; }
 .prose p { color: #3d3831; line-height: 2.1; }
+
+/* ---------- 常見問題 ---------- */
+.faq { margin: 0; }
+.faq dt {
+  font-family: var(--serif); font-size: clamp(18px, 2.2vw, 21px); font-weight: 700;
+  letter-spacing: 0.06em; padding-top: clamp(22px, 2.6vw, 30px); border-top: 1px solid var(--line);
+}
+.faq dt:first-of-type { padding-top: 0; border-top: 0; }
+.faq dd {
+  margin: 0.7em 0 clamp(22px, 2.6vw, 30px); color: #3d3831; line-height: 2.1;
+}
+.faq dd:last-child { margin-bottom: 0; }
+.faq dd a { color: var(--seal); text-decoration: none; border-bottom: 1px solid rgba(163, 57, 42, 0.35); }
+.faq dd a:hover { color: var(--seal-l); border-color: var(--seal-l); }
 .lead { font-family: var(--serif); font-size: clamp(19px, 2.6vw, 23px); line-height: 2.05; color: var(--ink) !important; }
 
 /* ---------- 文章頁 ---------- */
@@ -471,7 +503,7 @@ p:last-child { margin-bottom: 0; }
   content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
   width: 1px; height: 40px; background: rgba(245, 242, 234, 0.32);
 }
-.intro__brand b {
+.intro__brand h1 {
   font-family: var(--serif); font-size: clamp(22px, 2.8vw, 28px);
   /* 負的 margin 抵銷最後一個字後面的字距，讓區塊寬度＝標題實際墨色寬度 */
   letter-spacing: 0.24em; margin-right: -0.24em;
