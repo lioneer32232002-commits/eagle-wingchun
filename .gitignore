@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.DS_Store
+Thumbs.db
+
+# 影片原檔太大，不進版控（配圖已截好放在 assets/img/）
+影片/
+.wrangler/
