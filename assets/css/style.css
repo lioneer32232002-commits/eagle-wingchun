@@ -69,15 +69,20 @@ p:last-child { margin-bottom: 0; }
 }
 .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
 .seal { width: 30px; height: 30px; color: var(--seal-l); flex: none; }
-.brand__t { display: flex; flex-direction: column; line-height: 1.2; position: relative; padding-left: 13px; }
+.brand__t { display: block; width: fit-content; line-height: 1.2; position: relative; padding-left: 13px; }
 .brand__t::before {
   content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
   width: 1px; height: 28px; background: var(--line-d);
 }
-.brand__t b { font-family: var(--serif); font-size: 19px; letter-spacing: 0.24em; margin-bottom: 4px; line-height: 1.15; }
+.brand__t b {
+  display: block; font-family: var(--serif); font-size: 19px;
+  letter-spacing: 0.24em; margin-right: -0.24em;
+  margin-bottom: 5px; line-height: 1.15;
+}
 .brand__t i {
-  font-style: normal; font-size: 9px; letter-spacing: 0.3em;
-  color: var(--muted-d); text-transform: uppercase;
+  display: block; font-style: normal; font-size: 11px; letter-spacing: 0;
+  text-align: justify; text-align-last: justify; text-justify: inter-character;
+  line-height: 1.2; color: var(--muted-d); text-transform: uppercase;
 }
 .menu { display: flex; align-items: center; gap: clamp(18px, 2.4vw, 34px); }
 .menu a { text-decoration: none; font-size: 16px; letter-spacing: 0.1em; opacity: 0.86; transition: opacity 0.2s, color 0.2s; }
@@ -146,9 +151,15 @@ p:last-child { margin-bottom: 0; }
   border-radius: 999px; text-decoration: none; font-size: 16px; letter-spacing: 0.14em;
   transition: 0.25s ease; background: transparent; color: inherit;
 }
-.btn:hover { background: rgba(245, 242, 234, 0.12); border-color: var(--paper); }
-.btn--solid { background: var(--seal); border-color: var(--seal); color: #fff; }
-.btn--solid:hover { background: var(--seal-l); border-color: var(--seal-l); }
+.btn { backdrop-filter: blur(8px) saturate(130%); }
+.btn:hover { background: rgba(245, 242, 234, 0.14); border-color: var(--paper); }
+/* 主要按鈕：半透明朱砂，背景照片仍看得見 */
+.btn--solid {
+  background: rgba(163, 57, 42, 0.42);
+  border-color: rgba(201, 80, 60, 0.8);
+  color: var(--paper);
+}
+.btn--solid:hover { background: rgba(163, 57, 42, 0.78); border-color: var(--seal-l); }
 .btn--ink { border-color: var(--line); color: var(--ink); }
 .btn--ink:hover { background: var(--ink); border-color: var(--ink); color: var(--paper); }
 
@@ -292,8 +303,7 @@ p:last-child { margin-bottom: 0; }
   letter-spacing: 0.1em; max-width: 26em; margin-inline: auto;
   text-wrap: balance;
 }
-.pull p::before, .pull p::after { content: '「'; color: var(--seal-l); }
-.pull p::after { content: '」'; }
+
 
 .art__body { max-width: 460px; padding-top: clamp(48px, 7vw, 84px); padding-bottom: clamp(24px, 4vw, 40px); font-family: var(--serif); }
 .art__body p {
