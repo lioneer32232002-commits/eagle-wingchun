@@ -302,7 +302,7 @@ function footer() {
 
 /* 共用元件 */
 const hero = ({ img, imgTall, kicker, title, sub, cta = '', tall = false, pos = 'center 40%', posTall = 'center 50%' }) => `
-<section class="hero${tall ? ' hero--tall' : ''}">
+<section class="hero${tall ? ' hero--tall' : ''}${imgTall ? ' hero--swap' : ''}">
   <div class="hero__bg" style="background-image:url('/assets/img/${img}');background-position:${pos}"></div>
   ${
     imgTall
