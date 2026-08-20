@@ -41,7 +41,7 @@ export const SITE = {
     founded: '2011',
     // Search Console「HTML 標記」那個驗證碼，填了才會出現在每一頁的 <head>。
     // 用 DNS 或上傳檔案驗證的話這裡留空就好。
-    googleVerify: '',
+    googleVerify: '8Ai9Y6CnrWmBXCcWTwJmlHZfSFZc_s8C88cYQx-z-wc',
   },
 };
 
