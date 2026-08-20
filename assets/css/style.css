@@ -280,21 +280,38 @@ p:last-child { margin-bottom: 0; }
 .syl + .center { margin-top: clamp(34px, 5vw, 52px); }
 
 
-/* ---------- 課程項目 ---------- */
-.course { display: grid; gap: clamp(14px, 2vw, 20px); grid-template-columns: 1fr; }
-@media (min-width: 700px) { .course { grid-template-columns: repeat(2, 1fr); } .course__i:first-child { grid-column: 1 / -1; } }
-@media (min-width: 1000px) { .course { grid-template-columns: repeat(6, 1fr); } .course__i { grid-column: span 2; } .course__i:first-child, .course__i:nth-child(2) { grid-column: span 3; } }
-.course__i { position: relative; min-height: 260px; color: var(--paper); overflow: hidden; }
-.course__bg { position: absolute; inset: 0; background-size: cover; background-position: center 42%; }
-.course__veil { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(16, 14, 12, 0.35), rgba(16, 14, 12, 0.88)); }
-.course__in { position: relative; padding: clamp(24px, 3vw, 34px); min-height: 260px; display: flex; flex-direction: column; justify-content: flex-end; }
-.course__n {
-  font-family: var(--serif); font-size: 13px; letter-spacing: 0.3em; color: var(--seal-l);
-  border: 1px solid var(--seal-l); width: 34px; height: 34px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center; text-indent: 0.3em; margin-bottom: auto;
+/* ---------- 授課內容 ---------- */
+.lessons { display: grid; gap: clamp(44px, 6.5vw, 84px); }
+.lesson { display: grid; gap: clamp(20px, 3vw, 44px); align-items: center; }
+@media (min-width: 860px) {
+  .lesson { grid-template-columns: 5fr 6fr; }
+  .lesson:nth-child(even) .lesson__img { order: 2; }
 }
-.course__i h3 { font-size: clamp(20px, 2.4vw, 25px); letter-spacing: 0.1em; margin: 22px 0 0.4em; }
-.course__i p { font-size: 15.5px; color: rgba(245, 242, 234, 0.74); }
+.lesson__img { position: relative; }
+.lesson__img img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; filter: saturate(0.92) contrast(1.04); }
+.lesson__img::after {
+  content: ''; position: absolute; inset: 0; border: 1px solid var(--line);
+  transform: translate(13px, 13px); pointer-events: none;
+}
+.lesson__txt h3 { font-size: clamp(23px, 3vw, 31px); letter-spacing: 0.1em; margin: 0.6em 0 0.4em; }
+.lesson__d { color: var(--muted); font-size: clamp(16px, 1.9vw, 18px); margin: 0; }
+.lesson__q {
+  margin: clamp(22px, 2.6vw, 32px) 0 0; padding: 0 0 0 20px;
+  border-left: 2px solid rgba(163, 57, 42, 0.35);
+}
+.lesson__q p {
+  font-family: var(--serif); font-size: clamp(16px, 1.9vw, 18.5px);
+  line-height: 2.05; color: #3d3831; margin: 0;
+}
+.lesson__ref {
+  display: inline-block; margin-top: 1em; font-size: 14.5px; letter-spacing: 0.12em;
+  color: var(--seal); text-decoration: none;
+  border-bottom: 1px solid rgba(163, 57, 42, 0.3); padding-bottom: 5px;
+  transition: color 0.2s, border-color 0.2s;
+}
+.lesson__ref span { display: inline-block; margin-left: 5px; transition: transform 0.2s; }
+.lesson__ref:hover { color: var(--seal-l); border-color: var(--seal-l); }
+.lesson__ref:hover span { transform: translateX(5px); }
 
 /* ---------- 師承 ---------- */
 .tree { list-style: none; margin: 0; padding: 0; max-width: 660px; }

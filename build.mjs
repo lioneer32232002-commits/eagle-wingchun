@@ -96,8 +96,13 @@ const clauses = (t) =>
             .map((c) => (W(c) <= NB_MAX ? `<span class="nb">${c}</span>` : c))
             .join('')
         )
-        // 間隔放在前一個詞組的尾巴，斷行時才不會跑到下一行開頭
-        .map((seg, i, all) => (i < all.length - 1 ? seg.replace(/<\/span>$/, '<i class="gap"></i></span>') : seg))
+        // 間隔放在前一個詞組的尾巴，斷行時才不會跑到下一行開頭；
+        // 子句太寬沒被包起來時，改把最後一個字連同間隔另外包成不可斷行
+        .map((seg, i, all) => {
+          if (i === all.length - 1) return seg;
+          if (seg.endsWith('</span>')) return seg.replace(/<\/span>$/, '<i class="gap"></i></span>');
+          return `${seg.slice(0, -1)}<span class="nb">${seg.slice(-1)}<i class="gap"></i></span>`;
+        })
         .join('')
     )
     .join('<br>');
@@ -374,17 +379,38 @@ ${ctaBand()}
 }
 
 const SYLLABUS = [
-  ['一', '套路教學', '小念頭、尋橋、標指、木人樁', 'dummy.jpg'],
-  ['二', '手法線位運用', '最有效的防禦就是攻擊', 'chisau-photo.jpg'],
-  ['三', '朝型步法運用', '戰場上決不背對敵人', 'team-02.jpg'],
-  ['四', '身體結構運用', '身體力學的瞬息萬變', 'gear.jpg'],
-  ['五', '刀　棍', '隨機教化', 'knife.jpg'],
+  {
+    n: '一',
+    t: '套路教學',
+    d: '小念頭、尋橋、標指、木人樁',
+    img: 'dummy.jpg',
+    note: '小念頭裡真正的秘密是很少人知道的   他幾乎是武術中的核心  嚴格的說   當初把技擊技巧   武術內功   都把它放在小念頭裡面的那個(人)  他一定是一個甚麼都知道的狀態',
+    ref: { slug: 'xiao-nian-tou', title: '小念頭裡的秘密' },
+  },
+  {
+    n: '二',
+    t: '手法線位運用',
+    d: '最有效的防禦就是攻擊',
+    img: 'chisau-photo.jpg',
+    note: '標指是以指領  帶出手法動作身形  有趣的是  用這個技巧時  一般人看不見這個技巧  只能發現拳已經在臉上',
+    ref: { slug: 'biao-zhi', title: '標指與鞭法' },
+  },
+  { n: '三', t: '朝型步法運用', d: '戰場上決不背對敵人', img: 'team-02.jpg' },
+  {
+    n: '四',
+    t: '身體結構運用',
+    d: '身體力學的瞬息萬變',
+    img: 'gear.jpg',
+    note: '內壓出現  結構有些就會歸位  所以  其實裡面學問很大  所謂的自然  是自然而然完成許多精細的調整  是需要有專注的觀照力  才做得到的事',
+    ref: { slug: 'zi-ran', title: '自然，是精細的調整' },
+  },
+  { n: '五', t: '刀　棍', d: '隨機教化', img: 'knife.jpg' },
 ];
 
 const syllabusList = () => `
     <ol class="syl">
       ${SYLLABUS.map(
-        ([n, t, d]) => `<li><span class="syl__n">${n}</span><b>${t}</b><span class="syl__d">${d}</span></li>`
+        (v) => `<li><span class="syl__n">${v.n}</span><b>${v.t}</b><span class="syl__d">${v.d}</span></li>`
       ).join('')}
     </ol>`;
 
@@ -578,13 +604,22 @@ ${hero({ img: 'team-01.jpg', kicker: '課程', title: '<span class="nb">每週�
   <div class="wrap">
     <p class="kicker kicker--dark">授課內容</p>
     <h2 class="sec__t sec__t--dark"><span class="nb">套路、</span><span class="nb">手法、</span><span class="nb">步法、</span><span class="nb">結構、</span><span class="nb">刀棍</span></h2>
-    <div class="course">
+    <div class="lessons">
       ${items
         .map(
-          ([n, t, d, img]) => `<article class="course__i">
-        <div class="course__bg" style="background-image:url('/assets/img/${img}')"></div>
-        <div class="course__veil"></div>
-        <div class="course__in"><span class="course__n">${n}</span><h3>${t}</h3><p>${d}</p></div>
+          (v) => `<article class="lesson">
+        <div class="lesson__img"><img src="/assets/img/${v.img}" alt="${v.t}" loading="lazy"></div>
+        <div class="lesson__txt">
+          <span class="syl__n">${v.n}</span>
+          <h3>${v.t}</h3>
+          <p class="lesson__d">${v.d}</p>
+          ${
+            v.note
+              ? `<blockquote class="lesson__q"><p>${clauses(v.note)}</p>
+          <a class="lesson__ref" href="/writings/${v.ref.slug}/">師父手記〈${v.ref.title}〉<span>→</span></a></blockquote>`
+              : ''
+          }
+        </div>
       </article>`
         )
         .join('')}
