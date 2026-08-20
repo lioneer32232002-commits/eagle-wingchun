@@ -14,7 +14,7 @@ const DIST = path.join(ROOT, 'dist');
 export const SITE = {
   name: '鷹捷詠春',
   tagline: '黃英哲師父親授',
-  url: 'https://eagle-wingchun.wizard32232002.workers.dev',
+  url: 'https://eagle-wingchun.pages.dev',
   desc: '鷹捷詠春．黃英哲師父親授。師承葉問—黃淳樑—林海龍一脈，以實用為目的，重視傳統功力訓練。台北文山區萬壽橋下，每週二、五晚間授課。',
   phone: '0987-747-867',
   phoneRaw: '0987747867',
