@@ -403,7 +403,7 @@ p:last-child { margin-bottom: 0; }
 
 /* ---------- CTA ---------- */
 .cta { position: relative; padding: clamp(72px, 11vw, 132px) 0; color: var(--paper); overflow: hidden; text-align: center; }
-.cta__bg { position: absolute; inset: 0; background-size: cover; background-position: center 45%; }
+.cta__bg { position: absolute; inset: 0; background-size: cover; background-position: center 60%; }
 .cta__veil { position: absolute; inset: 0; background: rgba(16, 14, 12, 0.82); }
 .cta__in { position: relative; }
 .cta__in h2 { font-size: clamp(23px, 4vw, 38px); letter-spacing: 0.1em; margin-bottom: 0.7em; }
