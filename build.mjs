@@ -236,12 +236,8 @@ ${hero({
 <section class="sec">
   <div class="wrap">
     <p class="kicker kicker--dark">課程</p>
-    <h2 class="sec__t sec__t--dark">上課以實戰對練方式進行</h2>
-    <div class="info">
-      <div class="info__box"><h4>上課時間</h4><p>${SITE.time}</p></div>
-      <div class="info__box"><h4>上課地點</h4><p>${SITE.place}</p></div>
-      <div class="info__box"><h4>費　　用</h4><p>到現場直接諮詢</p></div>
-    </div>
+    <h2 class="sec__t sec__t--dark">根據學生的個性及身材<br>給予不同的調整</h2>
+    ${facts()}
     <p class="center"><a class="btn btn--ink" href="/classes/">完整授課內容</a></p>
   </div>
 </section>
@@ -256,6 +252,13 @@ ${ctaBand()}
     transparentNav: true,
   });
 }
+
+const facts = () => `
+    <div class="facts">
+      <div class="fact"><p class="fact__k">時間</p><p class="fact__v">每週二、週五<em>晚上 08:15 – 10:15</em></p></div>
+      <div class="fact"><p class="fact__k">地點</p><p class="fact__v">台北市文山區<em>萬壽橋下</em></p></div>
+      <div class="fact"><p class="fact__k">費用</p><p class="fact__v">到現場<em>直接諮詢</em></p></div>
+    </div>`;
 
 const ctaBand = () => `
 <section class="cta">
@@ -438,11 +441,7 @@ ${hero({ img: 'team-01.jpg', kicker: '課程', title: '每週二、五　橋下�
 
 <section class="sec">
   <div class="wrap">
-    <div class="info info--3">
-      <div class="info__box"><h4>上課時間</h4><p>每週二、週五<br>晚上 08:15 – 10:15</p></div>
-      <div class="info__box"><h4>上課地點</h4><p>台北市文山區<br>萬壽橋下</p></div>
-      <div class="info__box"><h4>費　　用</h4><p>到現場直接諮詢</p></div>
-    </div>
+    ${facts()}
   </div>
 </section>
 
@@ -467,7 +466,8 @@ ${hero({ img: 'team-01.jpg', kicker: '課程', title: '每週二、五　橋下�
 <section class="sec">
   <div class="wrap prose">
     <h2>上課方式</h2>
-    <p class="lead">上課以實戰對練方式進行，讓觀念、功力同時進步，強調實用、意志及體能。</p>
+    <p class="lead">教法著重詠春的基本觀念以及身體上的開發，並根據學生的個性及身材給予不同的調整。</p>
+    <p>上課以實戰對練方式進行，讓觀念、功力同時進步，強調實用、意志及體能。</p>
     <p>師父黃英哲以實用為目的，重視傳統功力訓練，授予完整的詠春觀念，並且透過實戰練習讓功夫不只是神祕的蹲馬步、打套路，而是真真實實可以保護自己跟家人的技能！</p>
     <p>費用到現場直接諮詢。</p>
   </div>
