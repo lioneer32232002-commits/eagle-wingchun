@@ -1,0 +1,13 @@
+{
+  // Cloudflare Workers（靜態資產）部署設定。
+  // 後台的 Deploy command 是 npx wrangler deploy，會讀這個檔。
+  "name": "eagle-wingchun",
+  "compatibility_date": "2026-08-15",
+  "assets": {
+    "directory": "./dist",
+    // /about  →  /about/  ，網址結尾自動補斜線
+    "html_handling": "auto-trailing-slash",
+    // 找不到頁面時回傳 dist/404.html
+    "not_found_handling": "404-page"
+  }
+}
