@@ -138,8 +138,8 @@ p:last-child { margin-bottom: 0; }
 @media (max-width: 700px) { .hero__vert { display: none; } }
 
 .kicker {
-  font-size: 12.5px; letter-spacing: 0.42em; text-transform: uppercase;
-  color: var(--seal-l); margin: 0 0 1.1em; font-weight: 500;
+  font-size: clamp(14px, 1.7vw, 16px); letter-spacing: 0.34em; text-transform: uppercase;
+  color: var(--seal-l); margin: 0 0 1.2em; font-weight: 500;
 }
 .kicker a { text-decoration: none; }
 .kicker--dark { color: var(--seal); }
