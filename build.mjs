@@ -111,14 +111,22 @@ const clauses = (t) =>
 
 const SEP = '\u241F'; // 標記停頓位置用，不會出現在文章裡
 
-/** 把停頓處斷開的句子，貪婪合併成不超過 maxW 的行 */
+/**
+ * 把停頓處斷開的句子，貪婪合併成不超過 maxW 的行。
+ * 師父有時用連續空白當停頓，有時只用一個空白，所以先用連續空白切，
+ * 切完還是太長的再用單一空白切，最後才退而求其次用標點切。
+ */
+function splitSegments(text, maxW) {
+  const bySpace = (t, re) => t.split(re).map((x) => x.trim()).filter(Boolean);
+  return bySpace(text, / {2,}/)
+    .flatMap((seg) => (W(seg) > maxW ? bySpace(seg, / /) : [seg]))
+    .flatMap((seg) => (W(seg) > maxW ? bySpace(seg, /(?<=[，。！？、；：])/) : [seg]));
+}
+
 function packLines(text, maxW) {
   const out = [];
   let cur = '';
-  text
-    .split(/ {2,}/)
-    .map((x) => x.trim())
-    .filter(Boolean)
+  splitSegments(text, maxW)
     .forEach((seg) => {
       if (cur && W(cur) + 1 + W(seg) <= maxW) cur += SEP + seg;
       else {
@@ -155,6 +163,10 @@ function renderBlock(block) {
   const lines = block.split('\n').map((l) => l.trimEnd());
   if (lines[0].startsWith('### ')) {
     return `<h3 class="a-h">${esc(lines[0].slice(4))}</h3>` + (lines.length > 1 ? para(lines.slice(1)) : '');
+  }
+  // 文末那幾行以 # 開頭的隨手註記
+  if (lines.every((l) => l.startsWith('#'))) {
+    return `<p class="a-tags">${lines.map((l) => esc(l)).join('<br>')}</p>`;
   }
   return para(lines);
 }
@@ -384,27 +396,41 @@ const SYLLABUS = [
     t: '套路教學',
     d: '小念頭、尋橋、標指、木人樁',
     img: 'dummy.jpg',
-    note: '小念頭裡真正的秘密是很少人知道的   他幾乎是武術中的核心  嚴格的說   當初把技擊技巧   武術內功   都把它放在小念頭裡面的那個(人)  他一定是一個甚麼都知道的狀態',
-    ref: { slug: 'xiao-nian-tou', title: '小念頭裡的秘密' },
+    note: '也像樹的成長  小念頭  練樁入地扎根  尋橋開始枝幹橫行  標指枝葉繁盛  風動枝葉動',
+    ref: { slug: 'san-tao-quan', title: '三套拳的層次' },
   },
   {
     n: '二',
     t: '手法線位運用',
     d: '最有效的防禦就是攻擊',
     img: 'chisau-photo.jpg',
-    note: '標指是以指領  帶出手法動作身形  有趣的是  用這個技巧時  一般人看不見這個技巧  只能發現拳已經在臉上',
-    ref: { slug: 'biao-zhi', title: '標指與鞭法' },
+    note: '學了詠春後  線與面就開始出現  從中線開始劃分  會分左右上下四門了',
+    ref: { slug: 'dian-xian-mian', title: '點、線、面，2D 與 3D' },
   },
-  { n: '三', t: '朝型步法運用', d: '戰場上決不背對敵人', img: 'team-02.jpg' },
+  {
+    n: '三',
+    t: '朝型步法運用',
+    d: '戰場上決不背對敵人',
+    img: 'team-02.jpg',
+    note: '無論防守與攻擊  我都要接的住手  接的下手  然後去求中近距離  入身入馬吃位與轉換朝型的突破',
+    ref: { slug: 'bu-jie-shou', title: '不接手的限制' },
+  },
   {
     n: '四',
     t: '身體結構運用',
     d: '身體力學的瞬息萬變',
     img: 'gear.jpg',
-    note: '內壓出現  結構有些就會歸位  所以  其實裡面學問很大  所謂的自然  是自然而然完成許多精細的調整  是需要有專注的觀照力  才做得到的事',
-    ref: { slug: 'zi-ran', title: '自然，是精細的調整' },
+    note: '這種結構應力就是我們常說的功力  我會說是結構應力  不只是結構  還要能應力',
+    ref: { slug: 'jie-gou-ying-li', title: '結構應力' },
   },
-  { n: '五', t: '刀　棍', d: '隨機教化', img: 'knife.jpg' },
+  {
+    n: '五',
+    t: '刀　棍',
+    d: '隨機教化',
+    img: 'knife.jpg',
+    note: '第四套拳  就是刀法  有了刀法  拳就不一樣了  但看起來還是一樣',
+    ref: { slug: 'men-qian-bao-di', title: '門前寶地觀後感' },
+  },
 ];
 
 const syllabusList = () => `
@@ -655,7 +681,29 @@ ${ctaBand()}
   return layout({ title: '師父手記', desc: '黃英哲師父的練功隨筆與教學心得：三合印、信心、放下、三種放鬆、標指與鞭法。', url: '/writings/', image: '/assets/img/bridge-empty.jpg', body });
 }
 
-function pageArticle(a, prev, next) {
+/** 系列文章導覽：同一個 series 的篇章依 part 排序 */
+function seriesNav(a, all) {
+  if (!a.series) return '';
+  const items = all.filter((x) => x.series === a.series).sort((x, y) => Number(x.part) - Number(y.part));
+  if (items.length < 2) return '';
+  const cn = ['一', '二', '三', '四', '五', '六'];
+  return `
+  <nav class="wrap series">
+    <p class="series__t">${esc(a.series)}　共 ${cn[items.length - 1]} 篇</p>
+    <ol>
+      ${items
+        .map(
+          (x) =>
+            `<li${x.slug === a.slug ? ' class="on"' : ''}><a href="/writings/${x.slug}/"><span>${
+              cn[Number(x.part) - 1]
+            }</span>${esc(x.title)}</a></li>`
+        )
+        .join('')}
+    </ol>
+  </nav>`;
+}
+
+function pageArticle(a, prev, next, all) {
   const body = `
 <article class="art">
   <header class="art__hero">
@@ -672,6 +720,7 @@ function pageArticle(a, prev, next) {
     ${renderBody(a.body)}
     <p class="art__sig">— 黃英哲</p>
   </div>
+  ${seriesNav(a, all)}
   <nav class="wrap art__nav">
     ${prev ? `<a class="art__nav-i" href="/writings/${prev.slug}/"><span>上一篇</span><b>${esc(prev.title)}</b></a>` : '<span></span>'}
     ${next ? `<a class="art__nav-i art__nav-i--r" href="/writings/${next.slug}/"><span>下一篇</span><b>${esc(next.title)}</b></a>` : '<span></span>'}
@@ -700,7 +749,7 @@ write('home/index.html', pageHome(arts));
 write('about/index.html', pageAbout());
 write('classes/index.html', pageClasses());
 write('writings/index.html', pageWritings(arts));
-arts.forEach((a, i) => write(`writings/${a.slug}/index.html`, pageArticle(a, arts[i + 1], arts[i - 1])));
+arts.forEach((a, i) => write(`writings/${a.slug}/index.html`, pageArticle(a, arts[i + 1], arts[i - 1], arts)));
 
 // sitemap
 const urls = ['/', '/home/', '/about/', '/classes/', '/writings/', ...arts.map((a) => `/writings/${a.slug}/`)];
