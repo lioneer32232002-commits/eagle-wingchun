@@ -348,7 +348,7 @@ ${hero({
   <div class="wrap">
     <p class="kicker kicker--dark">課程</p>
     <h2 class="sec__t sec__t--dark"><span class="nb">根據學生的個性及身材</span><br><span class="nb">給予不同的調整</span></h2>
-    ${facts()}
+    ${syllabusList()}
     <p class="center"><a class="btn btn--ink" href="/classes/">完整授課內容</a></p>
   </div>
 </section>
@@ -363,6 +363,21 @@ ${ctaBand()}
     transparentNav: true,
   });
 }
+
+const SYLLABUS = [
+  ['一', '套路教學', '小念頭、尋橋、標指、木人樁', 'dummy.jpg'],
+  ['二', '手法線位運用', '最有效的防禦就是攻擊', 'chisau-photo.jpg'],
+  ['三', '朝型步法運用', '戰場上決不背對敵人', 'team-02.jpg'],
+  ['四', '身體結構運用', '身體力學的瞬息萬變', 'gear.jpg'],
+  ['五', '刀　棍', '隨機教化', 'knife.jpg'],
+];
+
+const syllabusList = () => `
+    <ol class="syl">
+      ${SYLLABUS.map(
+        ([n, t, d]) => `<li><span class="syl__n">${n}</span><b>${t}</b><span class="syl__d">${d}</span></li>`
+      ).join('')}
+    </ol>`;
 
 const facts = () => `
     <div class="facts">
@@ -540,13 +555,7 @@ ${ctaBand()}
 }
 
 function pageClasses() {
-  const items = [
-    ['一', '套路教學', '小念頭、尋橋、標指、木人樁', 'dummy.jpg'],
-    ['二', '手法線位運用', '最有效的防禦就是攻擊', 'chisau-photo.jpg'],
-    ['三', '朝型步法運用', '戰場上決不背對敵人', 'team-02.jpg'],
-    ['四', '身體結構運用', '身體力學的瞬息萬變', 'gear.jpg'],
-    ['五', '刀　棍', '隨機教化', 'knife.jpg'],
-  ];
+  const items = SYLLABUS;
   const body = `
 ${hero({ img: 'team-01.jpg', kicker: '課程', title: '<span class="nb">每週二、五</span>　<span class="nb">橋下見</span>', sub: clauses('上課以實戰對練方式進行，讓觀念、功力同時進步。'), pos: 'center 55%' })}
 
