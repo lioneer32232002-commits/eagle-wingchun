@@ -301,9 +301,14 @@ function footer() {
 }
 
 /* 共用元件 */
-const hero = ({ img, kicker, title, sub, cta = '', tall = false, pos = 'center 40%' }) => `
+const hero = ({ img, imgTall, kicker, title, sub, cta = '', tall = false, pos = 'center 40%', posTall = 'center 50%' }) => `
 <section class="hero${tall ? ' hero--tall' : ''}">
   <div class="hero__bg" style="background-image:url('/assets/img/${img}');background-position:${pos}"></div>
+  ${
+    imgTall
+      ? `<div class="hero__bg hero__bg--tall" style="background-image:url('/assets/img/${imgTall}');background-position:${posTall}"></div>`
+      : ''
+  }
   <div class="hero__veil"></div>
   <div class="wrap hero__in">
     ${kicker ? `<p class="kicker">${kicker}</p>` : ''}
@@ -331,13 +336,17 @@ function pageHome(arts) {
   const feat = arts.slice(0, 3);
   const body = `
 ${hero({
-  img: 'hero-bridge.jpg',
+  img: 'hero-chisau.jpg',
+  // 手機版改用直式原圖，橫幅裁切在窄畫面會只剩中間一小條
+  imgTall: 'hero-chisau-tall.jpg',
+  posTall: 'center 62%',
   kicker: '台北 · 文山 · 萬壽橋下',
   title: '鷹捷詠春',
   sub: clauses('黃英哲師父親授　—　以實用為目的，重視傳統功力訓練，<br>授予完整的詠春觀念。'),
   cta: `<div class="btns"><a class="btn btn--solid" href="/classes/">課程資訊</a><a class="btn" href="/writings/">師父手記</a></div>`,
   tall: true,
-  pos: 'center 55%',
+  // 直式照片：桌機版裁上下，取到光暈與人的上半身
+  pos: 'center 35%',
 })}
 
 <section class="band">
@@ -349,7 +358,7 @@ ${hero({
 
 <section class="sec">
   <div class="wrap split">
-    <div class="split__img"><img src="/assets/img/sifu-form4.jpg" alt="黃英哲師父行拳" loading="lazy" width="1280" height="720"></div>
+    <div class="split__img"><img src="/assets/img/sifu.jpg" alt="黃英哲師父" loading="lazy" width="934" height="1028"></div>
     <div class="split__txt">
       <p class="kicker kicker--dark">關於師父</p>
       <h2>黃英哲</h2>
@@ -574,7 +583,7 @@ ${body}
 
 function pageAbout() {
   const body = `
-${hero({ img: 'sifu-form.jpg', kicker: '關於師父', title: '黃英哲', sub: clauses('師承葉問—黃淳樑—林海龍一脈'), pos: 'center 45%' })}
+${hero({ img: 'sifu-form.jpg', kicker: '關於師父', title: '黃英哲', sub: clauses('師承葉問—黃淳樑—林海龍一脈'), pos: 'center 20%' })}
 
 <section class="sec">
   <div class="wrap prose">
@@ -707,7 +716,7 @@ function pageArticle(a, prev, next, all) {
   const body = `
 <article class="art">
   <header class="art__hero">
-    <div class="art__bg" style="background-image:url('/assets/img/${a.image}')"></div>
+    <div class="art__bg" style="background-image:url('/assets/img/${a.image}');background-position:${a.pos || 'center 22%'}"></div>
     <div class="art__veil"></div>
     <div class="wrap art__head">
       <p class="kicker"><a href="/writings/">師父手記</a></p>

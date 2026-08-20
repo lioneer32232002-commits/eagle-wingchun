@@ -2,7 +2,8 @@
 slug: jie-gou-ying-li
 title: 結構應力
 date: 2020-11-06
-image: spar-close.jpg
+image: sifu-teaching.jpg
+pos: center 15%
 excerpt: 這種結構應力就是我們常說的功力  我會說是結構應力  不只是結構  還要能應力
 quote: 力由地起之前  對手的力早已入地
 ---

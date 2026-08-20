@@ -119,6 +119,12 @@ p:last-child { margin-bottom: 0; }
 .hero { position: relative; display: flex; align-items: flex-end; min-height: 62vh; padding: 128px 0 clamp(48px, 8vw, 92px); color: var(--paper); overflow: hidden; }
 .hero--tall { min-height: 100svh; align-items: center; padding-top: 100px; }
 .hero__bg { position: absolute; inset: 0; background-size: cover; background-position: center 40%; transform: scale(1.03); }
+/* 直式照片在窄畫面用原圖，寬畫面用橫幅裁切版 */
+.hero__bg--tall { display: none; }
+@media (max-width: 767px) {
+  .hero__bg { display: none; }
+  .hero__bg--tall { display: block; }
+}
 .hero__veil {
   position: absolute; inset: 0;
   background: linear-gradient(180deg, rgba(16, 14, 12, 0.72) 0%, rgba(16, 14, 12, 0.5) 38%, rgba(16, 14, 12, 0.86) 100%);

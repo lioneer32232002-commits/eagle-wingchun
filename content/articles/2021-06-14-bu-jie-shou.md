@@ -2,7 +2,8 @@
 slug: bu-jie-shou
 title: 不接手的限制
 date: 2021-06-14
-image: spar-wide.jpg
+image: chisau-night.jpg
+pos: center 12%
 series: 接與不接
 part: 2
 excerpt: 不接手固然是很棒的技術  但是有其限制

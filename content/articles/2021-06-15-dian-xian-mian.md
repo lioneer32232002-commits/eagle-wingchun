@@ -2,7 +2,8 @@
 slug: dian-xian-mian
 title: 點、線、面，2D 與 3D
 date: 2021-06-15
-image: chisau.jpg
+image: hero-bridge.jpg
+pos: center 45%
 series: 接與不接
 part: 3
 excerpt: 接到拳是軌跡上的必然  而不是目的
