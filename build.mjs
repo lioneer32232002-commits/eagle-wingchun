@@ -24,6 +24,10 @@ export const SITE = {
 };
 
 /* ---------- 工具 ---------- */
+const W = (t) => [...t].reduce((n, c) => n + (c.charCodeAt(0) < 0x2e80 ? 0.5 : 1), 0);
+const MAX_W = 18; // 內文一行的上限，手機版剛好不會折行
+const NB_MAX = 15; // 不可斷行詞組的寬度上限，手機版容得下
+
 /* ---------- 中文排版規則 ---------- */
 
 /** 半形標點轉全形、中英數之間補半形空格、刪掉手機打字留下的單獨句點 */
@@ -85,9 +89,11 @@ const clauses = (t) =>
         .filter(Boolean)
         .map((seg) =>
           seg
-            .split(/(?<=[，。！？])/)
+            // 頓號也是斷句點，不然「⋯蹲馬步、打套路，」會變成一整段不可斷行
+            .split(/(?<=[，。！？、])/)
             .filter(Boolean)
-            .map((c) => `<span class="nb">${c}</span>`)
+            // 太長的子句不設成不可斷行，否則手機版會撐破畫面
+            .map((c) => (W(c) <= NB_MAX ? `<span class="nb">${c}</span>` : c))
             .join('')
         )
         // 間隔放在前一個詞組的尾巴，斷行時才不會跑到下一行開頭
@@ -97,8 +103,7 @@ const clauses = (t) =>
     .join('<br>');
 
 /** 全形算 1、半形算 0.5，用來估一行佔多寬 */
-const W = (t) => [...t].reduce((n, c) => n + (c.charCodeAt(0) < 0x2e80 ? 0.5 : 1), 0);
-const MAX_W = 18; // 內文一行的上限，手機版剛好不會折行
+
 const SEP = '\u241F'; // 標記停頓位置用，不會出現在文章裡
 
 /** 把停頓處斷開的句子，貪婪合併成不超過 maxW 的行 */
@@ -126,11 +131,15 @@ const renderLines = (out) =>
     .map((l) =>
       esc(l)
         .split(SEP)
-        .map((seg, i, all) =>
-          i < all.length - 1
-            ? `<span class="nb">${seg}<i class="gap"></i></span>`
-            : `<span class="nb">${seg}</span>`
-        )
+        .map((seg, i, all) => {
+          const last = i === all.length - 1;
+          // 太寬的句子不設成不可斷行，否則手機版會撐破畫面；
+          // 但仍把停頓間隔綁在最後一個字上，它才不會跑到行首
+          if (W(seg) > NB_MAX) {
+            return last ? seg : `${seg.slice(0, -1)}<span class="nb">${seg.slice(-1)}<i class="gap"></i></span>`;
+          }
+          return last ? `<span class="nb">${seg}</span>` : `<span class="nb">${seg}<i class="gap"></i></span>`;
+        })
         .join('')
     )
     .join('<br>');
@@ -668,5 +677,19 @@ ${urls.map((u) => `  <url><loc>${SITE.url}${u}</loc></url>`).join('\n')}
 </urlset>`
 );
 write('robots.txt', `User-agent: *\nAllow: /\n\nSitemap: ${SITE.url}/sitemap.xml\n`);
+
+// 保險：檢查有沒有寬到會撐破手機畫面的不可斷行詞組
+const tooWide = [];
+for (const f of fs.readdirSync(DIST, { recursive: true })) {
+  if (!String(f).endsWith('.html')) continue;
+  const html = fs.readFileSync(path.join(DIST, String(f)), 'utf8');
+  for (const m of html.matchAll(/<span class="nb">([^<]*)<\/span>/g)) {
+    if (W(m[1]) > NB_MAX + 3) tooWide.push(`${f}  (${W(m[1])}) ${m[1]}`);
+  }
+}
+if (tooWide.length) {
+  console.warn(`⚠ 有 ${tooWide.length} 個不可斷行詞組可能撐破手機版：`);
+  tooWide.slice(0, 10).forEach((x) => console.warn('  ' + x));
+}
 
 console.log(`✓ 已建置 ${urls.length} 個頁面 → dist/`);
