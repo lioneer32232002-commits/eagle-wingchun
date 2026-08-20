@@ -15,9 +15,12 @@
 
 網站上的介紹文字都取自師父原話或舊站（nccu-wing-chun.weebly.com）原文，新增文案時請沿用這個原則。
 
+**完整的排版與文案規則寫在 [CLAUDE.md](CLAUDE.md)。**
+
 ## 資料夾
 
 ```
+CLAUDE.md           工作規則（排版、文案來源、配圖），Claude Code 會自動讀
 content/articles/   師父手記（每篇一個 .md，改這裡就能改網站文章）
 content/原稿/        LINE / FB 原始文字稿（不會出現在網站上）
 assets/img/         網站用圖（從照片與影片截圖處理過）
@@ -26,7 +29,26 @@ static/             會原樣複製到網站根目錄（favicon、404、_headers
 build.mjs           產生器：把上面的東西編成 dist/
 serve.mjs           本機預覽用的小伺服器
 dist/               產生出來的網站（不進版控，由 Cloudflare 自己建）
+影片/                影片原檔（不進版控，放在 OneDrive）
 ```
+
+## 在另一台電腦上開工
+
+程式碼、文章、網站用圖全部走 **Git**；只有影片原檔走 OneDrive（太大，不進版控）。
+
+```bash
+git clone https://github.com/lioneer32232002-commits/eagle-wingchun.git
+cd eagle-wingchun
+npm install
+npm run dev
+```
+
+影片原檔在 OneDrive：`02_創作/14 AI TEST/eagle-wingchun/影片/`
+需要重新截圖時再把它複製（或建捷徑）到專案的 `影片/` 底下。這個資料夾已經在 `.gitignore` 裡，不會被 commit。
+
+**每次開工前先 `git pull`，收工前 `git push`。** 兩台機器不要同時改同一個檔。
+
+`dist/`、`node_modules/`、`.wrangler/` 都是產生出來的，不用同步。
 
 ## 本機預覽
 
