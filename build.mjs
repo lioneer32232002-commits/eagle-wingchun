@@ -29,9 +29,11 @@ export const SITE = {
     region: '文山區',
     street: '萬壽橋下',
     country: 'TW',
-    // 萬壽橋（景美溪）橋下，用來給 Google 地圖對位
-    lat: 24.9903,
-    lon: 121.5535,
+    postalCode: '116',
+    // 萬壽橋（景美溪上，木柵路二段與新光路一段之間）。
+    // 這組座標是從 Google 地圖上的「116臺北市文山區萬壽橋」抄下來的，不要憑印象改。
+    lat: 24.9916943,
+    lon: 121.5723625,
     // 上課時段（24 小時制，給 openingHoursSpecification 用）
     days: ['Tuesday', 'Friday'],
     opens: '20:15',
@@ -206,8 +208,10 @@ const ldSchool = () => ({
     addressRegion: SITE.seo.locality,
     addressLocality: SITE.seo.region,
     streetAddress: SITE.seo.street,
+    postalCode: SITE.seo.postalCode,
   },
   geo: { '@type': 'GeoCoordinates', latitude: SITE.seo.lat, longitude: SITE.seo.lon },
+  hasMap: `https://www.google.com/maps/search/?api=1&query=${SITE.seo.lat},${SITE.seo.lon}`,
   areaServed: [
     { '@type': 'City', name: '台北市' },
     { '@type': 'AdministrativeArea', name: '文山區' },
@@ -539,7 +543,7 @@ function footer() {
     <div class="foot__brand">${seal}<div><b>鷹捷詠春</b><span>黃英哲師父親授</span></div></div>
     <div class="foot__cols">
       <div><h4>上課時間</h4><p><span class="nb">每週二、週五</span>　<span class="nb">晚上 08:15 – 10:15</span></p></div>
-      <div><h4>上課地點</h4><p><span class="nb">台北市文山區</span>　<span class="nb">萬壽橋下</span></p></div>
+      <div><h4>上課地點</h4><p><a href="${esc(MAP_PLACE)}" target="_blank" rel="noopener"><span class="nb">台北市文山區</span>　<span class="nb">萬壽橋下</span></a></p></div>
       <div><h4>聯絡師父</h4><p><a href="tel:${SITE.phoneRaw}">${SITE.phone}</a><br><a href="${SITE.fb}" target="_blank" rel="noopener">Facebook · 黃英哲</a></p></div>
     </div>
   </div>
@@ -783,10 +787,35 @@ const syllabusList = () => `
       ).join('')}
     </ol>`;
 
+/* ---------- 地圖 ----------
+   用 ?api=1 這組官方網址：手機裝了 Google 地圖 App 就直接開 App，
+   沒裝就開網頁版，桌機也一樣。座標在 SITE.seo。 */
+const GEO = `${SITE.seo.lat},${SITE.seo.lon}`;
+const MAP_PLACE = `https://www.google.com/maps/search/?api=1&query=${GEO}`;
+const MAP_DIR = `https://www.google.com/maps/dir/?api=1&destination=${GEO}`;
+// 免金鑰的內嵌地圖。iframe 很肥（載下去約 1.5MB），所以 loading="lazy"，
+// 使用者沒捲到就完全不會下載，不會拖累首屏。
+const MAP_EMBED = `https://maps.google.com/maps?q=${GEO}&z=16&hl=zh-TW&output=embed`;
+
+const mapBlock = () => `
+<section class="sec sec--map">
+  <div class="wrap">
+    <p class="kicker kicker--dark">上課地點</p>
+    <h2 class="sec__t sec__t--dark"><span class="nb">台北市文山區</span>　<span class="nb">萬壽橋下</span></h2>
+    <div class="map">
+      <iframe src="${esc(MAP_EMBED)}" title="鷹捷詠春上課地點：台北市文山區萬壽橋下" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+    </div>
+    <div class="btns btns--map">
+      <a class="btn btn--ink" href="${esc(MAP_DIR)}" target="_blank" rel="noopener">規劃路線</a>
+      <a class="btn btn--ink" href="${esc(MAP_PLACE)}" target="_blank" rel="noopener">在 Google 地圖開啟</a>
+    </div>
+  </div>
+</section>`;
+
 const facts = () => `
     <div class="facts">
       <div class="fact"><p class="fact__k">時間</p><p class="fact__v">每週二、週五<em>晚上 08:15 – 10:15</em></p></div>
-      <div class="fact"><p class="fact__k">地點</p><p class="fact__v">台北市文山區<em>萬壽橋下</em></p></div>
+      <div class="fact"><p class="fact__k">地點</p><p class="fact__v"><a href="${esc(MAP_PLACE)}" target="_blank" rel="noopener">台北市文山區<em>萬壽橋下</em></a></p></div>
       <div class="fact"><p class="fact__k">費用</p><p class="fact__v">到現場<em>直接諮詢</em></p></div>
     </div>`;
 
@@ -1043,6 +1072,8 @@ ${hero({ img: 'team-01.jpg', kicker: '課程', title: '<span class="nb">每週�
     </dl>
   </div>
 </section>
+
+${mapBlock()}
 
 ${ctaBand()}
 `;

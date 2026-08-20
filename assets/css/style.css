@@ -358,6 +358,30 @@ p:last-child { margin-bottom: 0; }
 .prose h2 { font-size: clamp(24px, 3.4vw, 32px); margin-bottom: 0.9em; letter-spacing: 0.1em; }
 .prose p { color: #3d3831; line-height: 2.1; }
 
+/* ---------- 地圖 ----------
+   iframe 是 Google 的內嵌地圖，帶 loading="lazy"，捲到才會載。 */
+.sec--map { background: var(--paper-2); }
+.map {
+  position: relative; aspect-ratio: 16 / 10; overflow: hidden;
+  border: 1px solid var(--line); background: var(--paper);
+}
+/* 寬螢幕不跟著長高 —— 16:10 在 1160px 寬會變成 725px，整個畫面只剩地圖 */
+@media (min-width: 900px) { .map { aspect-ratio: 21 / 9; } }
+.map iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
+/* 地圖的彩度壓下來一點，跟站上墨與紙的調子不要打架；hover 才回復 */
+.map iframe { filter: saturate(0.78) contrast(1.02); transition: filter 0.3s; }
+.map:hover iframe { filter: none; }
+.btns--map { justify-content: flex-start; }
+@media (max-width: 600px) {
+  .map { aspect-ratio: 4 / 3; }
+  .btns--map .btn { flex: 1 1 auto; text-align: center; }
+}
+/* 課程頁「地點」那格與頁尾的地址都連到地圖 */
+.fact__v a, .foot__cols a { text-decoration: none; border-bottom: 1px solid var(--line); }
+.fact__v a:hover { border-color: var(--seal); color: var(--seal); }
+.foot__cols a { border-bottom-color: var(--line-d); }
+.foot__cols a:hover { color: var(--seal-l); border-color: var(--seal-l); }
+
 /* ---------- 常見問題 ---------- */
 .faq { margin: 0; }
 .faq dt {
