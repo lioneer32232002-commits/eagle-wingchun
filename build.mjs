@@ -1301,6 +1301,14 @@ write(
   `User-agent: *
 Allow: /
 
+# AI 搜尋引用爬蟲，明確放行
+User-agent: OAI-SearchBot
+Allow: /
+User-agent: Claude-SearchBot
+Allow: /
+User-agent: PerplexityBot
+Allow: /
+
 # 這些爬蟲只會吃頻寬，網站本身沒有它們要的東西
 User-agent: AhrefsBot
 Disallow: /
