@@ -6,6 +6,7 @@ image: chisau-night.jpg
 pos: center 12%
 series: 接與不接
 part: 2
+tags: 接手
 excerpt: 不接手固然是很棒的技術  但是有其限制
 quote: 重疊的那一剎那  就會有另一個選項出現
 ---

@@ -3,6 +3,7 @@ slug: men-qian-bao-di
 title: 門前寶地觀後感
 date: 2024-10-11
 image: knife.jpg
+tags: 隨筆
 excerpt: 詠春的手法毒  其實腳法更毒
 quote: 有人的地方都有江湖  武的本質就是他媽的鬥
 ---

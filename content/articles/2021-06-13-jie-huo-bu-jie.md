@@ -5,6 +5,7 @@ date: 2021-06-13
 image: glove.jpg
 series: 接與不接
 part: 1
+tags: 接手
 excerpt: 打鬥的重點一直不是手  而是對手的臉
 quote: 他覺得接手太浪費時間  這話真的也對
 ---

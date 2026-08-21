@@ -3,6 +3,7 @@ slug: san-tao-quan
 title: 三套拳的層次
 date: 2020-01-15
 image: class-line.jpg
+tags: 套路
 excerpt: 詠春三套拳是一個很棒的訓練層次  像是大圓裏  包裹著中圓  中圓裏又裹著小圓  但是是同一個圓心
 quote: 每一個層次都會讓另外兩個更深更擴大
 ---

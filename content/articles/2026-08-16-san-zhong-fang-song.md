@@ -3,6 +3,7 @@ slug: san-zhong-fang-song
 title: 三種放鬆
 date: 2026-08-16
 image: class-group.jpg
+tags: 功體、心法
 excerpt: 普渡的時候想到的三種放鬆
 quote: 如氣球充滿  原本皺巴巴的氣球皮  被內氣推展  整體渾圓
 ---

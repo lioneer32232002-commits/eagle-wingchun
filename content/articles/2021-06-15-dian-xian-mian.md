@@ -6,6 +6,7 @@ image: hero-bridge.jpg
 pos: center 45%
 series: 接與不接
 part: 3
+tags: 接手、功體
 excerpt: 接到拳是軌跡上的必然  而不是目的
 quote: 不即不離  若即若離
 ---

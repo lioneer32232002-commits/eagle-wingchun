@@ -3,6 +3,7 @@ slug: xiao-nian-tou
 title: 小念頭裡的秘密
 date: 2026-08-18
 image: sifu-form2.jpg
+tags: 套路、心法
 excerpt: 小念頭裡真正的秘密是很少人知道的   他幾乎是武術中的核心
 quote: 統合中之後  就沒有內外壓的問題
 ---

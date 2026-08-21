@@ -4,6 +4,7 @@ title: 十五年了
 date: 2026-08-18
 image: dojo-banner.jpg
 pos: center 6%
+tags: 隨筆
 excerpt: 教拳其實是教育工作  跟做事業不太一樣  它跟人的身心靈  連結的更緊密
 quote: 我想得到身體  與靈魂  的自由
 ---

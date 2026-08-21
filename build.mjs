@@ -52,6 +52,9 @@ const W = (t) => [...t].reduce((n, c) => n + (c.charCodeAt(0) < 0x2e80 ? 0.5 : 1
 const MAX_W = 18; // 內文一行的上限，手機版剛好不會折行
 const NB_MAX = 15; // 不可斷行詞組的寬度上限，手機版容得下
 
+// 手記的標籤，固定這五種；順序就是篩選列的順序
+const TAGS = ['套路', '功體', '接手', '心法', '隨筆'];
+
 /* ---------- 中文排版規則 ---------- */
 
 /** 半形標點轉全形、中英數之間補半形空格、刪掉手機打字留下的單獨句點 */
@@ -396,10 +399,18 @@ function loadArticles() {
       ['title', 'excerpt', 'quote'].forEach((k) => {
         if (meta[k]) meta[k] = typo(meta[k]);
       });
+      const tags = (meta.tags || '').split(/[、,]/).map((s) => s.trim()).filter(Boolean);
       // 先做標點與空格正規化，後面算行寬才會準
-      return { ...meta, body: typo(m[2].trim()), file: f };
+      return { ...meta, tags, body: typo(m[2].trim()), file: f };
     })
     .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : a.file < b.file ? 1 : -1));
+  // 保險：標籤打錯字或忘了加進 TAGS 名單，篩選列上就永遠選不到
+  const unknown = new Set();
+  list.forEach((a) => a.tags.forEach((t) => { if (!TAGS.includes(t)) unknown.add(`${a.file}: ${t}`); }));
+  if (unknown.size) {
+    console.warn(`⚠ 有 ${unknown.size} 個標籤不在 TAGS 名單裡：`);
+    [...unknown].slice(0, 10).forEach((x) => console.warn('  ' + x));
+  }
   return list;
 }
 
@@ -517,18 +528,22 @@ ${footer()}
 
 const seal = `<svg class="seal" viewBox="0 0 48 48" aria-hidden="true"><rect x="1.5" y="1.5" width="45" height="45" rx="4" fill="none" stroke="currentColor" stroke-width="3"/><text x="25" y="35.6" text-anchor="middle" font-family="'Noto Serif TC',serif" font-weight="700" font-size="31" fill="currentColor">鷹</text></svg>`;
 
+// 最新一篇手記的日期；「新」徽章拿它去跟 localStorage 比對。
+// loadArticles() 排完序才知道，執行區會設回來。
+let LATEST = '';
+
 function nav(transparent) {
   const links = [
     ['/home/', '首頁'],
     ['/about/', '關於師父'],
     ['/classes/', '課程'],
-    ['/writings/', '師父手記'],
+    ['/writings/', '師父手記<span class="newdot" hidden data-latest="' + LATEST + '">新</span>'],
   ];
   return `<a class="skip" href="#main">跳至主要內容</a>
 <header class="nav${transparent ? ' nav--over' : ''}">
   <div class="nav__in">
     <a class="brand" href="/home/">${seal}<span class="brand__t"><b>鷹捷詠春</b><i>WING CHUN</i></span></a>
-    <button class="burger" aria-label="開啟選單" aria-expanded="false" aria-controls="menu"><span></span><span></span><span></span></button>
+    <button class="burger" aria-label="開啟選單" aria-expanded="false" aria-controls="menu"><span></span><span></span><span></span><i class="burger__dot" hidden></i></button>
     <nav id="menu" class="menu">
       ${links.map(([h, t]) => `<a href="${h}">${t}</a>`).join('\n      ')}
       <a class="menu__cta" href="${SITE.fb}" target="_blank" rel="noopener">聯絡師父</a>
@@ -571,11 +586,11 @@ const hero = ({ img, imgTall, kicker, title, sub, cta = '', tall = false, pos = 
 </section>`;
 
 const card = (a) => `
-<a class="card" href="/writings/${a.slug}/">
+<a class="card" href="/writings/${a.slug}/" data-tags="${a.tags.join(' ')}">
   <div class="card__bg bgimg" style="${bg(a.image, a.posCard || 'center 38%')}"></div>
   <div class="card__veil"></div>
   <div class="card__in">
-    <p class="card__date">${fmtDate(a.date)}</p>
+    <p class="card__date">${fmtDate(a.date)}${a.tags.length ? `<span class="card__tag">${a.tags.join('・')}</span>` : ''}</p>
     <h3 class="card__t">${esc(a.title)}</h3>
     <p class="card__x">${rhythm(a.excerpt, 15)}</p>
     <span class="card__more">閱讀全文</span>
@@ -1095,6 +1110,10 @@ function pageWritings(arts) {
 ${hero({ img: 'bridge-empty.jpg', kicker: '師父手記', title: '武道若夢', sub: clauses('這些都是隨意寫寫的  跟自己徒弟說說心情而已......'), pos: 'center 55%' })}
 <section class="sec sec--paper2">
   <div class="wrap">
+    <div class="tagbar" role="group" aria-label="依標籤篩選">
+      <button class="tag on" data-tag="" aria-pressed="true">全部</button>
+      ${TAGS.map((t) => `<button class="tag" data-tag="${esc(t)}" aria-pressed="false">${esc(t)}</button>`).join('\n      ')}
+    </div>
     <div class="cards cards--list">${arts.map(card).join('')}</div>
   </div>
 </section>
@@ -1170,6 +1189,7 @@ function pageArticle(a, prev, next, all) {
       <p class="kicker"><a href="/writings/">師父手記</a></p>
       <h1>${esc(a.title)}</h1>
       <p class="art__date"><time datetime="${a.date}">${fmtDate(a.date)}</time></p>
+      ${a.tags.length ? `<p class="art__tags">${a.tags.map((t) => `<a href="/writings/#tag=${encodeURIComponent(t)}">${esc(t)}</a>`).join('')}</p>` : ''}
     </div>
   </header>
   ${a.quote ? `<blockquote class="pull"><p>${rhythm(a.quote, 16)}</p></blockquote>` : ''}
@@ -1228,7 +1248,7 @@ ${ctaBand()}
           url: `${SITE.url}/writings/`,
         },
         articleSection: a.series || '詠春拳理',
-        keywords: ['詠春拳', '黃系詠春', a.title],
+        keywords: ['詠春拳', '黃系詠春', a.title, ...a.tags],
         wordCount: [...a.body.replace(/\s/g, '')].length,
       },
       ldSifu(),
@@ -1239,6 +1259,7 @@ ${ctaBand()}
 
 /* ---------- 執行 ---------- */
 const arts = loadArticles();
+LATEST = arts[0]?.date || '';
 rm(DIST);
 fs.mkdirSync(DIST, { recursive: true });
 copyDir(path.join(ROOT, 'assets'), path.join(DIST, 'assets'));
