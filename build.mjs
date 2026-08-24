@@ -401,7 +401,8 @@ function loadArticles() {
       });
       const tags = (meta.tags || '').split(/[、,]/).map((s) => s.trim()).filter(Boolean);
       // 先做標點與空格正規化，後面算行寬才會準
-      return { ...meta, tags, body: typo(m[2].trim()), file: f };
+      // added：放上網站的日期，選填，沒填就等於 date（補登舊文時才需要另外填）
+      return { ...meta, tags, added: meta.added || meta.date, body: typo(m[2].trim()), file: f };
     })
     .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : a.file < b.file ? 1 : -1));
   // 保險：標籤打錯字或忘了加進 TAGS 名單，篩選列上就永遠選不到
@@ -1263,7 +1264,9 @@ ${ctaBand()}
 
 /* ---------- 執行 ---------- */
 const arts = loadArticles();
-LATEST = arts[0]?.date || '';
+// 「新」徽章比對的是「放上網站」的日期，不是文章寫作日期（date），
+// 舊文現在才補上網站時要看 added，不能只看排序後的第一篇。
+LATEST = arts.reduce((m, a) => (a.added > m ? a.added : m), '');
 rm(DIST);
 fs.mkdirSync(DIST, { recursive: true });
 copyDir(path.join(ROOT, 'assets'), path.join(DIST, 'assets'));
