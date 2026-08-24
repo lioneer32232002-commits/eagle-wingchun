@@ -453,7 +453,11 @@ const verifyMeta = SITE.seo.googleVerify
 `
   : '';
 
-const headAssets = (preload) => `${verifyMeta}<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+// 依月份切季節印色；?season= 可預覽，沒有 JS 就退回預設的朱（見 style.css :root）。
+const SEASON_SCRIPT = `<script>(function(){var s=null;try{var m=location.search.match(/[?&]season=(spring|summer|autumn|winter)/);if(m)s=m[1];}catch(e){}if(!s){var mo=new Date().getMonth()+1;s=mo>=3&&mo<=5?"spring":mo>=6&&mo<=8?"summer":mo>=9&&mo<=11?"autumn":"winter";}document.documentElement.setAttribute("data-season",s);})()</script>
+`;
+
+const headAssets = (preload) => `${verifyMeta}${SEASON_SCRIPT}<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon.ico" sizes="32x32">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">

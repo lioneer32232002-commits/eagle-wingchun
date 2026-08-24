@@ -164,6 +164,19 @@ jpg 原檔不會被動到，webp 要一起 commit —— Cloudflare 的建置環
 
 導覽列的「師父手記」旁邊，發新文章後 60 天內會亮一個「新」徽章（漢堡選單也會有個小紅點）。純前端做法：`site.js` 拿 nav 裡 `.newdot` 的 `data-latest`（最新一篇的日期）跟 `localStorage` 記的「使用者看過的日期」比對，看過或超過 60 天就不亮，逛過手記列表頁也算看過。
 
+## 四季配色
+
+站的三層是「墨．紙．朱」。四季換的只有「印色」（`--seal` / `--seal-l`）與紙的底色微調（`--paper` / `--paper-2`）；墨色、照片上的壓黑漸層、灰字（`--muted` 系）全部不動。
+
+月份對應：3–5 月春・若竹（綠）、6–8 月夏・竹月（靛）、9–11 月秋・柿赭（橙褐）、12–2 月冬・絳朱（同預設朱色系，紙更暖）。
+
+靠 `headAssets()` 最前面那段 inline script，依當月在 `<html>` 設 `data-season`，`style.css` 的 `:root[data-season="..."]` 覆蓋對應變數。沒有 JS 就沒有 `data-season`，退回 `:root` 預設的朱色。網址加 `?season=summer` 這種可以強制預覽任一季。`static/404.html` 走自己的 `<head>`，同一段 script 手動複製了一份，改動時兩邊要一起改。
+
+改季節色時：
+
+- `style.css` 只能動 `--seal` / `--seal-l`（連同對應的 `-rgb` 版本）與 `--paper` / `--paper-2`，其他變數不要碰
+- 同步改 `tools/contrast.mjs` 裡的色表，跑一次 `node tools/contrast.mjs`，五組（預設＋四季）的每一對配色都要過門檻，有 ⚠ 就是新色壓不出可讀的對比，不能直接上
+
 ## SEO
 
 改文案時順手要顧的幾件事：

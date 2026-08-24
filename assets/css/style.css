@@ -9,7 +9,9 @@
   --muted: #6c665c;
   --muted-d: #a49c8f;
   --seal: #a3392a;
-  --seal-l: #c9503c;
+  --seal-l: #d3604a;
+  --seal-rgb: 163, 57, 42;
+  --seal-l-rgb: 211, 96, 74;
   --line: rgba(16, 14, 12, 0.14);
   --line-d: rgba(245, 242, 234, 0.18);
 
@@ -19,6 +21,32 @@
   --wrap: 1160px;
   --pad: clamp(20px, 5vw, 48px);
   --sec-y: clamp(64px, 10vw, 132px);
+}
+
+/* ---------- 四季印色 ----------
+   換的只有印色與紙的底色，墨與照片壓黑不動。
+   head 裡的 inline script 依月份在 <html> 設 data-season；
+   沒有 JS 就是預設的朱。網址加 ?season=summer 可預覽。
+   改色時要跑 node tools/contrast.mjs 驗對比度（印色壓紙、壓墨都要 ≥ 4.5）。 */
+:root[data-season="spring"] { /* 春・若竹 */
+  --seal: #42714b; --seal-l: #8cba8e;
+  --seal-rgb: 66, 113, 75; --seal-l-rgb: 140, 186, 142;
+  --paper: #f2f4ec; --paper-2: #e8ecdc;
+}
+:root[data-season="summer"] { /* 夏・竹月 */
+  --seal: #2f6673; --seal-l: #74b6c4;
+  --seal-rgb: 47, 102, 115; --seal-l-rgb: 116, 182, 196;
+  --paper: #f0f3ee; --paper-2: #e4eae2;
+}
+:root[data-season="autumn"] { /* 秋・柿赭 */
+  --seal: #8f5110; --seal-l: #d29a56;
+  --seal-rgb: 143, 81, 16; --seal-l-rgb: 210, 154, 86;
+  --paper: #f6f1e3; --paper-2: #eee5d0;
+}
+:root[data-season="winter"] { /* 冬・絳朱（印色同預設，紙更暖） */
+  --seal: #a3392a; --seal-l: #d3604a;
+  --seal-rgb: 163, 57, 42; --seal-l-rgb: 211, 96, 74;
+  --paper: #f7efe4; --paper-2: #efe3d1;
 }
 
 * { box-sizing: border-box; }
@@ -187,11 +215,11 @@ p:last-child { margin-bottom: 0; }
 .btn:hover { background: rgba(245, 242, 234, 0.14); border-color: var(--paper); }
 /* 主要按鈕：半透明朱砂，背景照片仍看得見 */
 .btn--solid {
-  background: rgba(163, 57, 42, 0.42);
-  border-color: rgba(201, 80, 60, 0.8);
+  background: rgba(var(--seal-rgb), 0.42);
+  border-color: rgba(var(--seal-l-rgb), 0.8);
   color: var(--paper);
 }
-.btn--solid:hover { background: rgba(163, 57, 42, 0.78); border-color: var(--seal-l); }
+.btn--solid:hover { background: rgba(var(--seal-rgb), 0.78); border-color: var(--seal-l); }
 .btn--ink { border-color: var(--line); color: var(--ink); }
 .btn--ink:hover { background: var(--ink); border-color: var(--ink); color: var(--paper); }
 
@@ -263,7 +291,7 @@ p:last-child { margin-bottom: 0; }
   color: var(--muted); cursor: pointer; transition: 0.2s;
 }
 .tagbar .tag:hover, .tagbar .tag.on { color: var(--seal); border-color: var(--seal); }
-.tagbar .tag.on { background: rgba(163, 57, 42, 0.06); }
+.tagbar .tag.on { background: rgba(var(--seal-rgb), 0.06); }
 
 /* ---------- 資訊卡 ---------- */
 .info { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); }
@@ -310,13 +338,13 @@ p:last-child { margin-bottom: 0; }
 @media (min-width: 720px) { .syl li { grid-template-columns: auto 12em 1fr; gap: 0 28px; } }
 .syl__n {
   font-family: var(--serif); font-size: 14px; letter-spacing: 0.2em; color: var(--seal);
-  border: 1px solid rgba(163, 57, 42, 0.45); border-radius: 50%;
+  border: 1px solid rgba(var(--seal-rgb), 0.45); border-radius: 50%;
   width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
   text-indent: 0.2em; align-self: center;
 }
 .syl li b { font-family: var(--serif); font-size: clamp(19px, 2.3vw, 24px); letter-spacing: 0.1em; }
 .syl__d { font-size: clamp(15px, 1.8vw, 17px); color: var(--muted); }
-.sec--dark .syl__n { color: var(--seal-l); border-color: rgba(201, 80, 60, 0.55); }
+.sec--dark .syl__n { color: var(--seal-l); border-color: rgba(var(--seal-l-rgb), 0.55); }
 .sec--dark .syl__d { color: rgba(245, 242, 234, 0.68); }
 @media (max-width: 719px) {
   .syl__n { grid-row: span 2; }
@@ -342,7 +370,7 @@ p:last-child { margin-bottom: 0; }
 .lesson__d { color: var(--muted); font-size: clamp(16px, 1.9vw, 18px); margin: 0; }
 .lesson__q {
   margin: clamp(22px, 2.6vw, 32px) 0 0; padding: 0 0 0 20px;
-  border-left: 2px solid rgba(163, 57, 42, 0.35);
+  border-left: 2px solid rgba(var(--seal-rgb), 0.35);
 }
 .lesson__q p {
   font-family: var(--serif); font-size: clamp(16px, 1.9vw, 18.5px);
@@ -351,7 +379,7 @@ p:last-child { margin-bottom: 0; }
 .lesson__ref {
   display: inline-block; margin-top: 1em; font-size: 14.5px; letter-spacing: 0.12em;
   color: var(--seal); text-decoration: none;
-  border-bottom: 1px solid rgba(163, 57, 42, 0.3); padding-bottom: 5px;
+  border-bottom: 1px solid rgba(var(--seal-rgb), 0.3); padding-bottom: 5px;
   transition: color 0.2s, border-color 0.2s;
 }
 .lesson__ref span { display: inline-block; margin-left: 5px; transition: transform 0.2s; }
@@ -360,9 +388,9 @@ p:last-child { margin-bottom: 0; }
 
 /* ---------- 師承 ---------- */
 /* 師承下面那段引文在深色底上，要把 .lesson__q 的深色字翻過來 */
-.lineage__q { max-width: 660px; border-left-color: rgba(196, 84, 66, 0.5); }
+.lineage__q { max-width: 660px; border-left-color: rgba(var(--seal-l-rgb), 0.5); }
 .lineage__q p { color: rgba(245, 242, 234, 0.82); }
-.lineage__q .lesson__ref { color: var(--seal-l); border-color: rgba(196, 84, 66, 0.4); }
+.lineage__q .lesson__ref { color: var(--seal-l); border-color: rgba(var(--seal-l-rgb), 0.4); }
 .tree { list-style: none; margin: 0; padding: 0; max-width: 660px; }
 .tree li { position: relative; padding: 0 0 34px 34px; border-left: 1px solid var(--line-d); }
 .tree li:last-child { border-left-color: transparent; padding-bottom: 0; }
@@ -370,7 +398,7 @@ p:last-child { margin-bottom: 0; }
   content: ''; position: absolute; left: -5px; top: 10px; width: 9px; height: 9px;
   border-radius: 50%; background: var(--muted-d);
 }
-.tree li.on::before { background: var(--seal-l); box-shadow: 0 0 0 5px rgba(163, 57, 42, 0.25); }
+.tree li.on::before { background: var(--seal-l); box-shadow: 0 0 0 5px rgba(var(--seal-rgb), 0.25); }
 .tree b { display: block; font-family: var(--serif); font-size: clamp(19px, 2.4vw, 24px); letter-spacing: 0.14em; margin-bottom: 0.3em; }
 .tree li.on b { color: var(--seal-l); }
 .tree span { font-size: 16px; color: rgba(245, 242, 234, 0.66); line-height: 1.9; }
@@ -415,7 +443,7 @@ p:last-child { margin-bottom: 0; }
   margin: 0.7em 0 clamp(22px, 2.6vw, 30px); color: #3d3831; line-height: 2.1;
 }
 .faq dd:last-child { margin-bottom: 0; }
-.faq dd a { color: var(--seal); text-decoration: none; border-bottom: 1px solid rgba(163, 57, 42, 0.35); }
+.faq dd a { color: var(--seal); text-decoration: none; border-bottom: 1px solid rgba(var(--seal-rgb), 0.35); }
 .faq dd a:hover { color: var(--seal-l); border-color: var(--seal-l); }
 .lead { font-family: var(--serif); font-size: clamp(19px, 2.6vw, 23px); line-height: 2.05; color: var(--ink) !important; }
 
