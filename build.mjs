@@ -1198,6 +1198,14 @@ function pageArticle(a, prev, next, all) {
     </div>
   </header>
   ${a.quote ? `<blockquote class="pull"><p>${rhythm(a.quote, 16)}</p></blockquote>` : ''}
+  ${
+    a.figure
+      ? `<figure class="art__fig">
+    <a href="/assets/img/${a.figure}" target="_blank" rel="noopener">${img(a.figure, a.figureAlt || a.title, { sizes: '(max-width: 860px) 100vw, 760px' })}</a>
+    ${a.figureCap ? `<figcaption>${esc(a.figureCap)}</figcaption>` : ''}
+  </figure>`
+      : ''
+  }
   <div class="wrap art__body">
     ${renderBody(a.body)}
     <p class="art__sig">— 黃英哲</p>
@@ -1212,13 +1220,15 @@ ${ctaBand()}
 `;
   // excerpt 常常只有十來個字，對搜尋結果的摘要太短，補上出處讓它成為完整一句
   const desc = `${a.excerpt}　— 鷹捷詠春 黃英哲師父手記${a.series ? `〈${a.series}〉系列` : ''}。`;
-  const d = imgSize(a.image);
+  // 分享（OG）與結構化資料用的圖：有完整插圖（figure）就用它，hero 那張只是裁過的背景
+  const share = a.figure || a.image;
+  const d = imgSize(share);
   return layout({
     title: a.title,
     titleTag: `${a.title}｜師父手記｜鷹捷詠春 黃英哲`,
     desc,
     url: `/writings/${a.slug}/`,
-    image: `/assets/img/${a.image}`,
+    image: `/assets/img/${share}`,
     body,
     ogType: 'article',
     preload: a.image,
@@ -1240,8 +1250,8 @@ ${ctaBand()}
         dateModified: a.date,
         inLanguage: 'zh-Hant',
         image: d
-          ? { '@type': 'ImageObject', url: `${SITE.url}/assets/img/${a.image}`, width: d.w, height: d.h }
-          : `${SITE.url}/assets/img/${a.image}`,
+          ? { '@type': 'ImageObject', url: `${SITE.url}/assets/img/${share}`, width: d.w, height: d.h }
+          : `${SITE.url}/assets/img/${share}`,
         author: { '@id': `${SITE.url}/about/#sifu` },
         publisher: { '@id': `${SITE.url}/#school` },
         // Blog 那個節點在 /writings/，不在這一頁上，所以名稱跟網址要寫齊，
