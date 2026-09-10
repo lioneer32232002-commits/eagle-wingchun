@@ -492,6 +492,8 @@ function layout({
   desc = typo(desc);
   const fullTitle = typo(titleTag || (title === SITE.name ? `${SITE.name}｜${SITE.tagline}` : `${title}｜${SITE.name}`));
   const og = SITE.url + (image || '/assets/img/og.jpg');
+  // 尺寸要跟實際的圖一致：FB 拿宣告的寬高排版，對不上時第一次分享常常整張圖不顯示
+  const ogD = imgSize(path.basename(image || '/assets/img/og.jpg')) || { w: 1200, h: 630 };
   const nodes = [...ld, crumbs ? ldCrumbs(crumbs) : null];
   return `<!DOCTYPE html>
 <html lang="zh-Hant-TW">
@@ -511,8 +513,9 @@ function layout({
 <meta property="og:url" content="${SITE.url}${url}">
 <meta property="og:image" content="${og}">
 <meta property="og:image:alt" content="${esc(title)}｜${SITE.name}">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
+<meta property="og:image:width" content="${ogD.w}">
+<meta property="og:image:height" content="${ogD.h}">
+<meta property="og:image:type" content="image/jpeg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${esc(fullTitle)}">
 <meta name="twitter:description" content="${esc(desc)}">
