@@ -6,6 +6,7 @@ image: four-stages-sketch.jpg
 pos: center 30%
 posCard: center 45%
 figure: four-stages.jpg
+ogImage: four-stages-og.jpg
 figureAlt: 黃英哲師父手繪：詠春打鬥的四個階段，中線、十字四門、立體四門、九宮立方體
 figureCap: 黃英哲　手繪
 tags: 接手、功體

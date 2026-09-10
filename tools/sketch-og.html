@@ -1,0 +1,50 @@
+<!--
+  師父手繪的分享圖（OG，1200×630）：手繪不能裁，所以整張原樣放左邊，右邊放標題、剪影、印章。
+  用法同 sketch-mount.html：裁好的 tools/sketch-crop.jpg 放旁邊，改 .cap 的標題文字，然後
+    msedge.exe --headless=new --disable-gpu --hide-scrollbars --window-size=1200,630 \
+      --screenshot="C:/.../og.png" "file:///D:/eaglewingchun/tools/sketch-og.html"
+  再用 PIL 存成 assets/img/X-og.jpg（quality 92），文章 frontmatter 填 ogImage: X-og.jpg。
+  題款只能用師父自己的標題／名字。
+-->
+<!doctype html><html><head><meta charset="utf-8"><style>
+html,body{margin:0}
+body{width:1200px;height:630px;background:#f3eee3;position:relative;overflow:hidden;font-family:'Noto Serif TC',serif;color:#100e0c}
+.grain{position:absolute;inset:0;opacity:.55;mix-blend-mode:multiply}
+.vig{position:absolute;inset:0;background:radial-gradient(120% 100% at 40% 40%,rgba(255,255,255,.35),rgba(120,100,70,.14))}
+.ph{position:absolute;left:56px;top:44px;height:542px;width:428px;box-shadow:0 14px 40px rgba(40,30,20,.22),0 2px 6px rgba(40,30,20,.18)}
+.ph img{display:block;width:100%;height:100%;object-fit:cover;filter:brightness(1.05) contrast(1.04) saturate(.88)}
+.ph::after{content:'';position:absolute;inset:0;box-shadow:inset 0 0 0 1px rgba(16,14,12,.18)}
+.side{position:absolute;left:560px;right:64px;top:44px;bottom:44px;display:flex;flex-direction:column;justify-content:space-between}
+.kicker{font-size:20px;letter-spacing:.42em;color:#a3392a;margin:8px 0 0}
+.cap{font-size:58px;font-weight:700;letter-spacing:.14em;line-height:1.35;color:#100e0c;margin:18px 0 0}
+.by{font-size:24px;letter-spacing:.3em;color:#6c665c;margin:22px 0 0}
+.foot{display:flex;align-items:flex-end;justify-content:space-between}
+.stance{width:74px;height:118px;opacity:.9}
+.seal{width:112px;height:112px}
+</style></head><body>
+<div class="vig"></div>
+<svg class="grain" xmlns="http://www.w3.org/2000/svg" width="1200" height="630"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 .55 0 0 0 0 .5 0 0 0 0 .42 0 0 0 .18 0"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
+<div class="ph"><img src="sketch-crop.jpg"></div>
+<div class="side">
+  <div>
+    <p class="kicker">師父手記</p>
+    <p class="cap">詠春打鬥的<br>四個階段</p>
+    <p class="by">黃英哲　手繪</p>
+  </div>
+  <div class="foot">
+    <svg class="stance" viewBox="0 0 100 160" xmlns="http://www.w3.org/2000/svg">
+      <g fill="#100e0c"><circle cx="50" cy="15" r="11"/><rect x="45.5" y="24" width="9" height="8"/><path d="M27 36 Q50 28 73 36 L69 86 Q50 92 31 86 Z"/></g>
+      <g fill="none" stroke="#100e0c" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M30 42 L20 60 L31 64" stroke-width="9"/><path d="M70 42 L80 60 L69 64" stroke-width="9"/>
+        <path d="M38 86 L43 114" stroke-width="11"/><path d="M62 86 L57 114" stroke-width="11"/>
+        <path d="M43 114 L34 144" stroke-width="10"/><path d="M57 114 L66 144" stroke-width="10"/>
+      </g>
+      <g fill="#100e0c"><circle cx="32" cy="64" r="6.5"/><circle cx="68" cy="64" r="6.5"/><circle cx="43" cy="114" r="6"/><circle cx="57" cy="114" r="6"/><path d="M26 142 L46 133 L49 141 L33 151 Z"/><path d="M74 142 L54 133 L51 141 L67 151 Z"/></g>
+    </svg>
+    <svg class="seal" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+      <rect x="1.5" y="1.5" width="45" height="45" rx="3" fill="#a3392a"/>
+      <text font-family="'Noto Serif TC',serif" font-weight="700" font-size="19" fill="#f5f2ea" text-anchor="middle"><tspan x="35" y="21.5">鷹</tspan><tspan x="35" y="41">捷</tspan><tspan x="14" y="21.5">詠</tspan><tspan x="14" y="41">春</tspan></text>
+    </svg>
+  </div>
+</div>
+</body></html>

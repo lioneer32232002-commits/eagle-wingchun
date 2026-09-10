@@ -31,6 +31,7 @@ part: 2               # 選填，系列裡的第幾篇
 figure: sketch.jpg    # 選填，要整張完整顯示在正文前的插圖（例如師父手繪），hero 會裁圖時用
 figureAlt: 圖片的替代文字
 figureCap: 圖下方的小字說明   # 選填
+ogImage: sketch-og.jpg  # 選填，分享用的 1200×630 橫版；沒填就用 figure，再沒有就用 image
 ---
 第一段第一行
 第一段第二行
@@ -138,7 +139,10 @@ ffmpeg -i assets/img/X.jpg -vf "scale=1920:H1,crop=1920:498:0:Y" out.jpg
    手機上 hero 幾乎會露出整張圖，用裱框版的話題款會透到標題後面。
 6. 文章 frontmatter：`image: X-sketch.jpg`（hero、卡片）、`figure: X.jpg`（正文前完整顯示，
    點圖與「原圖 PNG」連到 png，分享的 OG 圖也用它）、`figureAlt:` 寫清楚畫了什麼、`figureCap: 黃英哲　手繪`。
-7. 驗證時用 Edge 無頭模式在真實視窗尺寸截圖（1280×720 與 390×844），看手機版 hero 有沒有鬼影、
+7. **分享圖另做橫版**：手繪不能裁，直式圖丟給 FB / LINE 會只剩中間一段。用 `tools/sketch-og.html`
+   渲染 1200×630 的 `X-og.jpg`（整張手繪原樣放左邊，右邊標題、剪影、印章），frontmatter 填 `ogImage: X-og.jpg`。
+   一般照片沒有這個問題，OG 直接用 `image:` 那張，由平台自己裁。
+8. 驗證時用 Edge 無頭模式在真實視窗尺寸截圖（1280×720 與 390×844），看手機版 hero 有沒有鬼影、
    圖說有沒有斷行。
 
 首頁 hero 是直式照片，另外準備了橫幅裁切版給桌機（`imgTall` 參數在窄畫面切換回直式原圖）。

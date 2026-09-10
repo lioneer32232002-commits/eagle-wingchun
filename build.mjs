@@ -1241,8 +1241,9 @@ ${ctaBand()}
 `;
   // excerpt 常常只有十來個字，對搜尋結果的摘要太短，補上出處讓它成為完整一句
   const desc = `${a.excerpt}　— 鷹捷詠春 黃英哲師父手記${a.series ? `〈${a.series}〉系列` : ''}。`;
-  // 分享（OG）與結構化資料用的圖：有完整插圖（figure）就用它，hero 那張只是裁過的背景
-  const share = a.figure || a.image;
+  // 分享（OG）與結構化資料用的圖：有專門做的 ogImage（手繪的 1200×630 橫版）優先，
+  // 其次是完整插圖（figure），hero 那張只是裁過的背景
+  const share = a.ogImage || a.figure || a.image;
   const d = imgSize(share);
   return layout({
     title: a.title,
