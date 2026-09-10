@@ -469,9 +469,11 @@ p:last-child { margin-bottom: 0; }
 }
 
 .art__fig { max-width: 760px; margin: clamp(48px, 7vw, 84px) auto 0; padding-inline: var(--pad); }
-.art__fig a { display: block; }
+.art__fig > a { display: block; }
 .art__fig img { display: block; width: 100%; height: auto; box-shadow: 0 14px 40px rgba(16, 14, 12, 0.14), 0 1px 3px rgba(16, 14, 12, 0.12); }
-.art__fig figcaption { font-family: var(--serif); font-size: 13.5px; letter-spacing: 0.24em; color: var(--muted); text-align: center; margin-top: 1.2em; }
+.art__fig figcaption { font-family: var(--serif); font-size: 16px; letter-spacing: 0.24em; color: var(--muted); text-align: center; margin-top: 1.2em; }
+.art__fig-dl { color: var(--seal); text-decoration: none; border-bottom: 1px solid rgba(var(--seal-rgb), 0.35); margin-left: 1.6em; }
+.art__fig-dl:hover { color: var(--seal-l); border-color: var(--seal-l); }
 
 
 .art__body { max-width: 460px; padding-top: clamp(48px, 7vw, 84px); padding-bottom: clamp(24px, 4vw, 40px); font-family: var(--serif); }

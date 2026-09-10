@@ -121,7 +121,8 @@ ffmpeg -i assets/img/X.jpg -vf "scale=1920:H1,crop=1920:498:0:Y" out.jpg
 ```
 
 一般照片照上面的方式處理就好，不做特殊設計。只有師父手繪的圖走另一條路：`tools/sketch-mount.html` 是裱框版型（紙底、細框、二字箝羊馬剪影、鷹捷詠春印），
-用 Edge 無頭模式渲染成 jpg（步驟寫在檔案開頭）。裱好的版本給文中插圖（`figure:`）與分享圖用；
+用 Edge 無頭模式渲染成 png（步驟寫在檔案開頭）。png 是原檔，跟同名的 jpg 一起放進 `assets/img/`：
+有同名 png 的 jpg 不會出 webp（讀者長按存圖拿到 jpg），點圖與「原圖 PNG」連到 png 讓人收藏。裱好的版本給文中插圖（`figure:`）與分享圖用；
 hero 與卡片要另外用只裁掉邊的素圖（`image:`），不然題款會透到標題後面。
 
 首頁 hero 是直式照片，另外準備了橫幅裁切版給桌機（`imgTall` 參數在窄畫面切換回直式原圖）。

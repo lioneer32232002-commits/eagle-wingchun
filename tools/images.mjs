@@ -27,7 +27,10 @@ function width(file) {
   return 0;
 }
 
-const jpgs = fs.readdirSync(DIR).filter((f) => f.endsWith('.jpg'));
+// 同名 .png 存在的 jpg 是要給人收藏的圖（師父手繪的裱框版）：網頁直接用 jpg，不出 webp，
+// 讀者長按存圖才不會拿到 webp。png 本身是原檔，只給下載連結用。
+const all = fs.readdirSync(DIR);
+const jpgs = all.filter((f) => f.endsWith('.jpg') && !all.includes(f.replace(/\.jpg$/, '.png')));
 let before = 0;
 let after = 0;
 

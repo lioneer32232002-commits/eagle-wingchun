@@ -1162,6 +1162,16 @@ ${ctaBand()}
   });
 }
 
+/**
+ * 插圖的原檔：同名的 .png 存在，就代表這張是要給人收藏的（師父手繪），
+ * 點圖與「原圖 PNG」連到它；頁面上顯示的仍是 jpg（tools/images.mjs 看到 png 就不出 webp，
+ * 長按存圖拿到的是 jpg，不是 webp）。沒有 png 就照舊連 jpg。
+ */
+const figMaster = (name) => {
+  const png = name.replace(/\.jpe?g$/i, '.png');
+  return png !== name && has(png) ? png : name;
+};
+
 /** 系列文章導覽：同一個 series 的篇章依 part 排序 */
 function seriesNav(a, all) {
   if (!a.series) return '';
@@ -1201,8 +1211,16 @@ function pageArticle(a, prev, next, all) {
   ${
     a.figure
       ? `<figure class="art__fig">
-    <a href="/assets/img/${a.figure}" target="_blank" rel="noopener">${img(a.figure, a.figureAlt || a.title, { sizes: '(max-width: 860px) 100vw, 760px' })}</a>
-    ${a.figureCap ? `<figcaption>${esc(a.figureCap)}</figcaption>` : ''}
+    <a href="/assets/img/${figMaster(a.figure)}" target="_blank" rel="noopener">${img(a.figure, a.figureAlt || a.title, { sizes: '(max-width: 860px) 100vw, 760px' })}</a>
+    ${
+      a.figureCap || figMaster(a.figure) !== a.figure
+        ? `<figcaption>${esc(a.figureCap || '')}${
+            figMaster(a.figure) !== a.figure
+              ? `<a class="art__fig-dl" href="/assets/img/${figMaster(a.figure)}" download>原圖 PNG</a>`
+              : ''
+          }</figcaption>`
+        : ''
+    }
   </figure>`
       : ''
   }
