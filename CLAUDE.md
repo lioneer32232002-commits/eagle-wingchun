@@ -120,7 +120,7 @@ posCard: center 19%    # 卡片，直式照片在這裡要再往上一點才不�
 ffmpeg -i assets/img/X.jpg -vf "scale=1920:H1,crop=1920:498:0:Y" out.jpg
 ```
 
-師父手繪的圖走另一條路：`tools/sketch-mount.html` 是裱框版型（紙底、細框、二字箝羊馬剪影、鷹捷詠春印），
+一般照片照上面的方式處理就好，不做特殊設計。只有師父手繪的圖走另一條路：`tools/sketch-mount.html` 是裱框版型（紙底、細框、二字箝羊馬剪影、鷹捷詠春印），
 用 Edge 無頭模式渲染成 jpg（步驟寫在檔案開頭）。裱好的版本給文中插圖（`figure:`）與分享圖用；
 hero 與卡片要另外用只裁掉邊的素圖（`image:`），不然題款會透到標題後面。
 
