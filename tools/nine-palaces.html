@@ -1,0 +1,109 @@
+<!doctype html>
+<!--
+  〈九宮縱橫〉的配圖版型：九條淡淡的軌道，九顆星繞著中心轉。
+  不是師父手繪，所以不裱框、不落款，就是一張暗底的背景圖。
+
+  渲染 1920×1080 的 png：
+    npx playwright screenshot --viewport-size=1920,1080 tools/nine-palaces.html /tmp/nine-palaces.png
+  再轉成 assets/img/nine-palaces.jpg（quality 92），跑 npm run img 產 webp。
+  png 不要留在 assets/img/，留了 npm run img 就不會出 webp。
+-->
+<meta charset="utf-8" />
+<title>九宮縱橫 配圖</title>
+<style>
+  html, body { margin: 0; background: #080706; }
+  body { width: 1920px; height: 1080px; overflow: hidden; }
+  svg { display: block; }
+</style>
+<svg id="s" width="1920" height="1080" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg"></svg>
+<script>
+  const CX = 960, CY = 540, TILT = -13, FLAT = 0.46;
+
+  // 九條軌道：半長軸、星的半徑、顏色、星停在軌道上的角度（度）
+  const BODIES = [
+    { a: 132, r: 6,  c: '#b6a58c', deg: 204 },
+    { a: 198, r: 10, c: '#d3b287', deg: 318 },
+    { a: 266, r: 11, c: '#9db4ae', deg: 46 },
+    { a: 338, r: 8,  c: '#bd7854', deg: 133 },
+    { a: 448, r: 25, c: '#d2bd9c', deg: 256 },
+    { a: 552, r: 20, c: '#c4ab77', deg: 15, ring: true },
+    { a: 656, r: 15, c: '#9db6c1', deg: 99 },
+    { a: 764, r: 14, c: '#8ea3bf', deg: 170 },
+    { a: 872, r: 6,  c: '#a2958a', deg: 338 },
+  ];
+
+  const esc = (n) => Math.round(n * 100) / 100;
+  const rad = (d) => (d * Math.PI) / 180;
+
+  // 星星背景：固定亂數，重跑結果一樣
+  let seed = 20260913;
+  const rnd = () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
+
+  const stars = Array.from({ length: 160 }, () => {
+    const x = rnd() * 1920;
+    const y = rnd() * 1080;
+    const d = Math.hypot((x - CX) / 960, (y - CY) / 540);
+    return { x, y, r: 0.5 + rnd() * 1.1, o: (0.06 + rnd() * 0.26) * Math.min(1, 0.35 + d) };
+  });
+
+  const orbits = BODIES.map(
+    (b) =>
+      `<ellipse cx="${CX}" cy="${CY}" rx="${b.a}" ry="${esc(b.a * FLAT)}"
+        fill="none" stroke="url(#orbit)" stroke-width="1.1" />`
+  ).join('');
+
+  const planets = BODIES.map((b) => {
+    const x = esc(CX + b.a * Math.cos(rad(b.deg)));
+    const y = esc(CY + b.a * FLAT * Math.sin(rad(b.deg)));
+    const ring = b.ring
+      ? `<ellipse cx="${x}" cy="${y}" rx="${b.r * 2.05}" ry="${esc(b.r * 0.62)}"
+          fill="none" stroke="${b.c}" stroke-opacity="0.5" stroke-width="2.2"
+          transform="rotate(-17 ${x} ${y})" />`
+      : '';
+    return `<g color="${b.c}">
+      <circle cx="${x}" cy="${y}" r="${esc(b.r * 4.2)}" fill="url(#glow)" />
+      <circle cx="${x}" cy="${y}" r="${b.r}" fill="${b.c}" opacity="0.92" />
+      ${ring}
+    </g>`;
+  }).join('');
+
+  document.getElementById('s').innerHTML = `
+  <defs>
+    <radialGradient id="sky" cx="50%" cy="50%" r="72%">
+      <stop offset="0%" stop-color="#221c17" />
+      <stop offset="55%" stop-color="#151211" />
+      <stop offset="100%" stop-color="#080706" />
+    </radialGradient>
+    <radialGradient id="orbit">
+      <stop offset="0%" stop-color="#f5f2ea" stop-opacity="0.34" />
+      <stop offset="100%" stop-color="#f5f2ea" stop-opacity="0.14" />
+    </radialGradient>
+    <radialGradient id="core">
+      <stop offset="0%" stop-color="#ffd9c4" />
+      <stop offset="32%" stop-color="#d3604a" />
+      <stop offset="100%" stop-color="#a3392a" />
+    </radialGradient>
+    <radialGradient id="glow">
+      <stop offset="0%" stop-color="currentColor" stop-opacity="0.26" />
+      <stop offset="38%" stop-color="currentColor" stop-opacity="0.1" />
+      <stop offset="100%" stop-color="currentColor" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="halo">
+      <stop offset="0%" stop-color="#d3604a" stop-opacity="0.5" />
+      <stop offset="45%" stop-color="#a3392a" stop-opacity="0.18" />
+      <stop offset="100%" stop-color="#a3392a" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#sky)" />
+  <g fill="#f5f2ea">
+    ${stars.map((s) => `<circle cx="${esc(s.x)}" cy="${esc(s.y)}" r="${esc(s.r)}" opacity="${esc(s.o)}" />`).join('')}
+  </g>
+
+  <g transform="rotate(${TILT} ${CX} ${CY})">
+    ${orbits}
+    <circle cx="${CX}" cy="${CY}" r="150" fill="url(#halo)" />
+    <circle cx="${CX}" cy="${CY}" r="21" fill="url(#core)" />
+    ${planets}
+  </g>`;
+</script>
