@@ -33,7 +33,22 @@ http
       res.end(fs.existsSync(nf) ? fs.readFileSync(nf) : 'Not found');
       return;
     }
-    res.writeHead(200, { 'Content-Type': TYPES[path.extname(file)] || 'application/octet-stream' });
-    res.end(fs.readFileSync(file));
+    const type = TYPES[path.extname(file)] || 'application/octet-stream';
+    const size = fs.statSync(file).size;
+    // 影片要支援 Range，不然 Chrome 不能拖進度條、跳秒數（Cloudflare 本來就會，這裡只是本機預覽）
+    const m = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range || '');
+    if (m && size) {
+      const start = m[1] ? Number(m[1]) : Math.max(0, size - Number(m[2]));
+      const end = m[1] && m[2] ? Math.min(Number(m[2]), size - 1) : size - 1;
+      if (start >= size || start > end) { res.writeHead(416, { 'Content-Range': `bytes */${size}` }).end(); return; }
+      res.writeHead(206, {
+        'Content-Type': type, 'Accept-Ranges': 'bytes',
+        'Content-Range': `bytes ${start}-${end}/${size}`, 'Content-Length': end - start + 1,
+      });
+      fs.createReadStream(file, { start, end }).pipe(res);
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': type, 'Accept-Ranges': 'bytes', 'Content-Length': size });
+    fs.createReadStream(file).pipe(res);
   })
   .listen(PORT, () => console.log(`http://localhost:${PORT}`));
