@@ -204,6 +204,8 @@ ffprobe -v error -select_streams v:0 -show_entries stream=width,height -show_ent
 - 直式影片不會撐滿 760px：CSS 依比例把寬度收到「高度不超過 80vh」，橫式維持 760px。
 - 影片跟 mp4 都會被 `VideoObject` 結構化資料與 `og:video` 帶出去，網址與時間直接從欄位來。
 - 有影片的文章，手記列表的卡片會多一個朱色「影片」小標記。
+- 有影片的文章，頁尾的「上一部／下一部」只在有影片的文章之間走（讀者多半從 `/videos/` 進來）；
+  純文字手記維持依日期的上一篇／下一篇。
 - `npm run img` 不管影片，影片不需要另外產格式，但檔案會進 git，先壓到合理大小再放。
 - **Cloudflare Pages 的靜態檔不支援 Range 請求**，影片會不能拖時間軸、不能快轉（2026-09-18 上線後才發現）。
   `functions/assets/video/[[path]].js` 是專門補這件事的 Pages Function：接 `/assets/video/*`，

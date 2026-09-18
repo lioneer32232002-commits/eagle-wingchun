@@ -1431,8 +1431,8 @@ function pageArticle(a, prev, next, all) {
   </div>
   ${seriesNav(a, all)}
   <nav class="wrap art__nav">
-    ${prev ? `<a class="art__nav-i" href="/writings/${prev.slug}/"><span>上一篇</span><b>${esc(prev.title)}</b></a>` : '<span></span>'}
-    ${next ? `<a class="art__nav-i art__nav-i--r" href="/writings/${next.slug}/"><span>下一篇</span><b>${esc(next.title)}</b></a>` : '<span></span>'}
+    ${prev ? `<a class="art__nav-i" href="/writings/${prev.slug}/"><span>${a.video ? '上一部' : '上一篇'}</span><b>${esc(prev.title)}</b></a>` : '<span></span>'}
+    ${next ? `<a class="art__nav-i art__nav-i--r" href="/writings/${next.slug}/"><span>${a.video ? '下一部' : '下一篇'}</span><b>${esc(next.title)}</b></a>` : '<span></span>'}
   </nav>
 </article>
 ${ctaBand()}
@@ -1520,7 +1520,14 @@ write('about/index.html', pageAbout());
 write('classes/index.html', pageClasses(arts));
 write('writings/index.html', pageWritings(arts));
 write('videos/index.html', pageVideos(arts));
-arts.forEach((a, i) => write(`writings/${a.slug}/index.html`, pageArticle(a, arts[i + 1], arts[i - 1], arts)));
+// 有影片的文章，上一部／下一部在有影片的文章之間走（讀者多半是從 /videos/ 進來的）；
+// 純文字手記維持依日期的前後篇
+const vidList = arts.filter((a) => a.video);
+arts.forEach((a) => {
+  const list = a.video ? vidList : arts;
+  const i = list.indexOf(a);
+  write(`writings/${a.slug}/index.html`, pageArticle(a, list[i + 1], list[i - 1], arts));
+});
 
 // sitemap：lastmod 讓 Google 知道哪幾頁動過，priority 說明站內的輕重
 const newest = arts[0]?.date;
