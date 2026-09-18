@@ -57,7 +57,7 @@ const { flags, positional } = parseArgs(process.argv.slice(2));
 const [src, slug] = positional;
 
 if (!src || !slug) {
-  console.error('用法：node tools/video-encode.mjs <來源.mp4> <slug> [--h=720|540] [--crf=N] [--t=秒] [--old] [--sub] [--outdir=PATH] [--font=NAME]');
+  console.error('用法：node tools/video-encode.mjs <來源.mp4> <slug> [--h=720|540] [--crf=N] [--t=秒] [--old] [--sub] [--sub-only] [--outdir=PATH] [--font=NAME]');
   process.exit(1);
 }
 if (!fs.existsSync(src)) {
@@ -78,7 +78,7 @@ const W = H === 720 ? 1280 : 960;
 const CRF = flags.crf ? Number(flags.crf) : 25;
 const T = flags.t ? Number(flags.t) : null;
 const SHARPEN = flags.old ? SHARPEN_OLD : SHARPEN_DEFAULT;
-const FONT = flags.font || 'Noto Serif TC';
+const FONT = flags.font || 'Noto Serif TC Static';
 const OUTDIR = flags.outdir
   ? path.resolve(flags.outdir)
   : path.join(os.tmpdir(), 'eagle-wingchun-sub-out');
@@ -144,7 +144,12 @@ function encodeSub() {
 
   const srcAbs = path.resolve(src);
   const out = path.join(OUTDIR, `${slug}-sub.mp4`);
-  const filterComplex = `[0:v]scale=1280:720:flags=lanczos,${SHARPEN},subtitles=${slug}.ass[v0];[v0][1:v]overlay=W-w-24:24[v]`;
+  // 靜態 Bold 字型（tools/make-font.py 產的）複製到輸出目錄，用 fontsdir=. 給 libass；
+  // 系統的可變字型 libass 只抓得到 ExtraLight
+  const fontSrc = path.join(ROOT, 'tools/fonts/NotoSerifTC-Bold.ttf');
+  if (!fs.existsSync(fontSrc)) console.warn('⚠ 找不到 tools/fonts/NotoSerifTC-Bold.ttf，先跑 python tools/make-font.py，否則字會很細');
+  else fs.copyFileSync(fontSrc, path.join(OUTDIR, 'NotoSerifTC-Bold.ttf'));
+  const filterComplex = `[0:v]scale=1280:720:flags=lanczos,${SHARPEN},subtitles=${slug}.ass:fontsdir=.[v0];[v0][1:v]overlay=W-w-24:24[v]`;
 
   const args = ['-y', '-i', srcAbs, '-i', WATERMARK, '-filter_complex', filterComplex, '-map', '[v]', '-map', '0:a'];
   if (T) {
@@ -171,5 +176,5 @@ function encodeSub() {
   return out;
 }
 
-encodeMain();
-if (flags.sub) encodeSub();
+if (!flags['sub-only']) encodeMain();
+if (flags.sub || flags['sub-only']) encodeSub();

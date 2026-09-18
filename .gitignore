@@ -9,3 +9,6 @@ Thumbs.db
 
 # 裱框版型用的裁好原圖，每張都不同，不進 git
 tools/sketch-crop.jpg
+
+# 燒字幕用的靜態 Bold 字型，tools/make-font.py 產的，10MB 不進 git
+tools/fonts/

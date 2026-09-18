@@ -220,6 +220,9 @@ ffprobe -v error -select_streams v:0 -show_entries stream=width,height -show_ent
   `data-tags` 補上「影片」兩個字，site.js 現成的篩選就能用，`/writings/#tag=影片` 也能分享。
   它**不在 `TAGS` 名單裡，不能寫進 frontmatter 的 `tags:`**（寫了建置會警告）。
 - 浮水印是 `tools/watermark.py` 產的 `tools/watermark.png`，`tools/video-encode.mjs` 轉檔時固定壓上去；
+- 燒錄版的字型：libass 抓不到系統 Noto Serif TC 可變字型的 Bold（只會退到 ExtraLight，字很細），
+  所以先跑一次 `python tools/make-font.py` 產出 `tools/fonts/NotoSerifTC-Bold.ttf`（靜態 Bold 實例，不進 git），
+  `npm run encode` 會把它帶給 libass。`--sub-only` 只重做燒錄版、不動站上版。
   hero 背景循環片（下一節，`npm run loop` 出的 `-loop.mp4` / `-loop-sm.mp4`）不壓浮水印。
 
 ### 從 FB 抓片到上字幕（2026-09-18 定下來的流程，第一支是〈伏攤膀不是三個動作〉）
