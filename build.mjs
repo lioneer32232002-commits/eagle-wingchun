@@ -1053,7 +1053,10 @@ ${body}
 
 function pageAbout() {
   const body = `
-${hero({ img: 'sifu-form.jpg', kicker: '關於師父', title: '黃英哲', sub: clauses('師承葉問—黃淳樑—林海龍一脈'), pos: 'center 20%' })}
+${hero({ img: 'sifu-form.jpg', kicker: '關於師父', title: '黃英哲', sub: clauses('師承葉問—黃淳樑—林海龍一脈'), pos: 'center 20%',
+  // 師父 2025-11-30 永和班打標指的 reel，沒有做成手記（不上字幕），只剪一段當背景；
+  // 裁掉四周放大 1.33 倍，人才不會太小。換片段見 CLAUDE.md〈hero 的背景影片〉
+  video: { src: 'sifu-form-loop.mp4', sm: 'sifu-form-loop-sm.mp4' } })}
 
 <section class="sec">
   <div class="wrap prose">

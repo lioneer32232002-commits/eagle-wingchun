@@ -303,6 +303,11 @@ npm run loop src.mp4 62.5 75.5 zhong     # → assets/video/zhong-loop.mp4 與 -
 手機改 `center center` —— 手機的照片是直式、影片是橫式，cover 之後上下不裁、左右裁很多，
 兩人剛好在正中間。
 
+關於師父頁（`/about/`）的 `sifu-form-loop.mp4` 不是從手記剪的：來源是師父 2025-11-30 永和班打標指的 reel
+（https://www.facebook.com/reel/833229056164406），使用者指定不上字幕、不做文章，只當背景。
+人在原片裡偏小，剪的時候裁中央 75%（960×540）再放回 1280×720，等於放大 1.33 倍。
+`pageAbout` 直接寫檔名，不走 `HERO_LOOPS`。
+
 ## 配圖要先跑 `npm run img`
 
 放進 `assets/img/` 的新 jpg，要跑一次：
