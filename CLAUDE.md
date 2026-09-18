@@ -313,7 +313,7 @@ npm run loop src.mp4 62.5 75.5 zhong     # → assets/video/zhong-loop.mp4 與 -
 
 關於師父頁（`/about/`）的 `sifu-form-loop.mp4` 不是從手記剪的：來源是師父 2025-11-30 永和班打標指的 reel
 （https://www.facebook.com/reel/833229056164406），使用者指定不上字幕、不做文章，只當背景。
-人在原片裡偏小，剪的時候裁中央 75%（960×540）再放回 1280×720，等於放大 1.33 倍。
+人在原片裡偏小，剪的時候裁 1088×612（`--crop=1088:612:66:50`，放大 1.18 倍、頭頂留白），hero 又寬又矮會再裁掉上下三成，放大太多頭會被切掉。
 `pageAbout` 直接寫檔名，不走 `HERO_LOOPS`。
 
 ## 配圖要先跑 `npm run img`
