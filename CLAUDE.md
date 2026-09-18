@@ -226,8 +226,11 @@ ffprobe -v error -select_streams v:0 -show_entries stream=width,height -show_ent
    師父的影片是公開的，不用 cookie。同時 `yt-dlp -J` 把貼文文字存下來（UTF-8），
    那段貼文就是文章正文——跟手記一樣，一個字都不改，只調換行；結尾的 `#鷹捷詠春` 標籤不放。
    `upload_date` 填 `date:` 與 `videoDate:`，今天填 `added:`。
-2. **轉檔**：FB 給的多半是 vp9，iOS 不吃，一定要轉 h264。夜拍雜訊多，
-   `-crf 27 -b:a 96k` 才壓得到 12MB 左右（crf 23 會到 20MB）。
+2. **轉檔**：FB 給的多半是 vp9，iOS 不吃，一定要轉 h264。用 `-crf 23`（超過兩分鐘的片用 `-crf 24`）、
+   `-b:a 96k`；濾鏡加 `hqdn3d=1.2:1.2:2.5:2.5,unsharp=5:5:0.7:5:5:0.0`（先降噪再銳化，不動對比、顏色）。
+   來源只有 640×360 的，先 `scale=1280:720:flags=lanczos` 放大再銳化，`unsharp` 的量減到 `0.8`
+   （放大過的畫面本來就比較糊，銳化太重會出現光暈）。
+   （2026-09-18 之前用過 `-crf 27` 被反映太糊才改的。）
 3. **poster**：從影片抽一張兩人正臉、動作清楚的畫面當 `image:`（`ffmpeg -vf "select='eq(n\,幀數)'" -vsync vfr`），
    跑 `npm run img`。注意 `npm run img` 偶爾會順手重寫某張舊 webp，commit 前 `git status` 看一下，
    無關的 webp 用 `git checkout` 還原。
@@ -262,10 +265,15 @@ ffprobe -v error -select_streams v:0 -show_entries stream=width,height -show_ent
 
 | 檔案 | 規格 | 用在 |
 | --- | --- | --- |
-| `assets/video/<slug>-loop.mp4` | 1280×720、30fps、crf 28、無音軌、+faststart | 視窗寬 ≥ 768px |
-| `assets/video/<slug>-loop-sm.mp4` | 640×360、crf 30 | 視窗寬 < 768px |
+| `assets/video/<slug>-loop.mp4` | 1280×720、30fps、crf 26、無音軌、+faststart | 視窗寬 ≥ 768px |
+| `assets/video/<slug>-loop-sm.mp4` | 640×360、crf 28 | 視窗寬 < 768px |
 
-目標大小 3MB / 1MB 以內（現在 `fu-tan-bang-loop` 2.3MB / 0.66MB、`zhong-loop` 1.5MB / 0.40MB）。
+濾鏡鏈固定加 `hqdn3d=1.2:1.2:2.5:2.5,unsharp=5:5:0.7:5:5:0.0`（先降噪再銳化，不動對比、顏色，
+2026-09-18 從 crf 28/30 降到 26/28 時一起加的，反映影片有點糊）。人在畫面裡太小的來源，
+`npm run loop` 支援 `--crop=W:H:X:Y` 在縮放前先裁切再放大（見 `sifu-form-loop` 那段）。
+
+目標大小 3MB / 1MB 以內（現在 `fu-tan-bang-loop` 3.19MB ⚠／1.01MB ⚠（超一點，剪短或再調高 crf 再看）、
+`zhong-loop` 2.03MB / 0.62MB、`sifu-form-loop` 1.33MB / 0.40MB）。
 hero 的壓黑漸層很重，手機版用 640 寬完全看不出來，不要為了畫質把它放大。
 
 哪一頁用哪一支：
