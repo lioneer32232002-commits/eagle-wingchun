@@ -191,8 +191,8 @@ ffmpeg -ss 52 -i "影片/檔名.mp4" -frames:v 1 -q:v 3 assets/img/新檔名.jpg
 `figure:` 與 `video:` 可以同一篇並存（先影片，後插圖）。
 
 ```bash
-# FB 下載的檔多半已經是 h264+aac，要轉再轉；順便把寬高印出來填 videoW / videoH
-ffmpeg -i 原片.mp4 -c:v libx264 -crf 23 -preset slow -pix_fmt yuv420p -c:a aac -b:a 128k -movflags +faststart assets/video/X.mp4
+# 轉檔用 tools/video-encode.mjs（見下面〈從 FB 抓片到上字幕〉第 2 步），不要自己敲 ffmpeg。
+npm run encode -- 原片.mp4 X
 ffprobe -v error -select_streams v:0 -show_entries stream=width,height -show_entries format=duration assets/video/X.mp4
 ```
 
@@ -219,6 +219,8 @@ ffprobe -v error -select_streams v:0 -show_entries stream=width,height -show_ent
 - 手記列表的篩選列多一顆「影片」，那是**偽標籤**：`card()` 在有 `video:` 的卡片的
   `data-tags` 補上「影片」兩個字，site.js 現成的篩選就能用，`/writings/#tag=影片` 也能分享。
   它**不在 `TAGS` 名單裡，不能寫進 frontmatter 的 `tags:`**（寫了建置會警告）。
+- 浮水印是 `tools/watermark.py` 產的 `tools/watermark.png`，`tools/video-encode.mjs` 轉檔時固定壓上去；
+  hero 背景循環片（下一節，`npm run loop` 出的 `-loop.mp4` / `-loop-sm.mp4`）不壓浮水印。
 
 ### 從 FB 抓片到上字幕（2026-09-18 定下來的流程，第一支是〈伏攤膀不是三個動作〉）
 
@@ -226,11 +228,23 @@ ffprobe -v error -select_streams v:0 -show_entries stream=width,height -show_ent
    師父的影片是公開的，不用 cookie。同時 `yt-dlp -J` 把貼文文字存下來（UTF-8），
    那段貼文就是文章正文——跟手記一樣，一個字都不改，只調換行；結尾的 `#鷹捷詠春` 標籤不放。
    `upload_date` 填 `date:` 與 `videoDate:`，今天填 `added:`。
-2. **轉檔**：FB 給的多半是 vp9，iOS 不吃，一定要轉 h264。用 `-crf 23`（超過兩分鐘的片用 `-crf 24`）、
-   `-b:a 96k`；濾鏡加 `hqdn3d=1.2:1.2:2.5:2.5,unsharp=5:5:0.7:5:5:0.0`（先降噪再銳化，不動對比、顏色）。
-   來源只有 640×360 的，先 `scale=1280:720:flags=lanczos` 放大再銳化，`unsharp` 的量減到 `0.8`
-   （放大過的畫面本來就比較糊，銳化太重會出現光暈）。
-   （2026-09-18 之前用過 `-crf 27` 被反映太糊才改的。）
+2. **轉檔**：用 `npm run encode -- <來源.mp4> <slug> [選項]`（`tools/video-encode.mjs`），
+   不要自己敲 ffmpeg。輸出 `assets/video/<slug>.mp4`，浮水印固定壓右上角。
+
+   ```bash
+   npm run encode -- src.mp4 zhong --sub
+   ```
+
+   | 選項 | 說明 |
+   | --- | --- |
+   | `--h=720\|540` | 輸出 1280×720 或 960×540（預設 720） |
+   | `--crf=N` | 預設 25；超過兩分鐘的片可以調到 26–27 |
+   | `--t=秒` | 只取前 N 秒，最後 1 秒自動加音訊淡出 |
+   | `--old` | 舊錄音／低解析來源：降噪加重、銳化減輕（來源只有 640×360 這種先放大再銳化，銳化太重會出現光暈） |
+   | `--sub` | 另外燒一份 `<slug>-sub.mp4`（見下面第 7 步），不進 git |
+   | `--font=NAME` | 字幕燒錄字型，預設「Noto Serif TC」，libass 吃不到變體字型時退回 `Microsoft JhengHei` |
+
+   （2026-09-18 之前用過 `-crf 27` 被反映太糊才改的；同一天把轉檔固定進這支工具，順便統一加浮水印。）
 3. **poster**：從影片抽一張兩人正臉、動作清楚的畫面當 `image:`（`ffmpeg -vf "select='eq(n\,幀數)'" -vsync vfr`），
    跑 `npm run img`。注意 `npm run img` 偶爾會順手重寫某張舊 webp，commit 前 `git status` 看一下，
    無關的 webp 用 `git checkout` 還原。
@@ -245,8 +259,8 @@ ffprobe -v error -select_streams v:0 -show_entries stream=width,height -show_ent
 6. **字幕格式**：WebVTT，一個 cue 一行，不超過 16 個全形字，句尾不加標點，
    句中停頓用全形空格（跟手記排版同一個呼吸）。cue 的起訖取逐字時間戳，
    同一句話說兩次就切成兩個 cue。
-7. **另外燒一份**：`tools/` 沒有腳本，用 ffmpeg `subtitles=` 濾鏡把 vtt（先轉 ass）燒進畫面，
-   出 `X-sub.mp4` 交給使用者重傳 FB / LINE 用。這個檔不進 git。
+7. **另外燒一份**：`--sub` 選項會自動出這份（見上面第 2 步的表格），
+   燒進畫面的字型與樣式固定在 `tools/video-encode.mjs`，這個檔不進 git。
 8. **剪一段循環片**：`npm run loop src.mp4 起秒 迄秒 <slug>`，frontmatter 填
    `videoLoop: <slug>-loop.mp4`，`/videos/` 的 hero 就自動換成這一支（見下一節）。
    **挑接點要看首尾幀**：兩人都在畫面中、姿勢與景框相近，循環回頭才不會跳；
