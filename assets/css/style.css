@@ -80,7 +80,24 @@ img { max-width: 100%; height: auto; display: block; }
     .bgimg { background-image: image-set(var(--bg-s, var(--bg-w, var(--bg-j))) type("image/webp"), var(--bg-j) type("image/jpeg")); }
   }
 }
-a { color: inherit; }
+a { color: inherit; text-decoration: none; }
+/* 內文裡的連結：不畫底線，用朱色（深底用亮朱）標示；
+   滑過或鍵盤聚焦時才浮出一條離字有距離的細線。全站的文字連結都走這一套。 */
+.lk, .faq dd a, .art__fig figcaption a, .fact__v a, .foot__cols a, .lesson__ref, .scene__more {
+  color: var(--seal);
+  text-decoration: underline; text-decoration-color: transparent; text-decoration-thickness: 1px;
+  text-underline-offset: 0.34em;
+  transition: text-decoration-color 0.25s, color 0.2s;
+}
+.lk:hover, .lk:focus-visible, .faq dd a:hover, .faq dd a:focus-visible,
+.art__fig figcaption a:hover, .art__fig figcaption a:focus-visible,
+.fact__v a:hover, .fact__v a:focus-visible, .lesson__ref:hover, .lesson__ref:focus-visible {
+  text-decoration-color: rgba(var(--seal-rgb), 0.6);
+}
+.foot__cols a, .scene__more { color: var(--seal-l); }
+.foot__cols a:hover, .foot__cols a:focus-visible, .scene__more:hover, .scene__more:focus-visible {
+  text-decoration-color: rgba(245, 242, 234, 0.5);
+}
 h1, h2, h3, h4 { font-family: var(--serif); font-weight: 700; line-height: 1.35; letter-spacing: 0.04em; margin: 0; text-wrap: balance; }
 p { margin: 0 0 1.2em; }
 p:last-child { margin-bottom: 0; }
@@ -398,12 +415,9 @@ p:last-child { margin-bottom: 0; }
 }
 .lesson__ref {
   display: inline-block; margin-top: 1em; font-size: 14.5px; letter-spacing: 0.12em;
-  color: var(--seal); text-decoration: none;
-  border-bottom: 1px solid rgba(var(--seal-rgb), 0.3); padding-bottom: 5px;
-  transition: color 0.2s, border-color 0.2s;
 }
 .lesson__ref span { display: inline-block; margin-left: 5px; transition: transform 0.2s; }
-.lesson__ref:hover { color: var(--seal-l); border-color: var(--seal-l); }
+.lesson__ref:hover { color: var(--seal-l); }
 .lesson__ref:hover span { transform: translateX(5px); }
 
 /* ---------- 師承 ---------- */
@@ -447,10 +461,6 @@ p:last-child { margin-bottom: 0; }
   .btns--map .btn { flex: 1 1 auto; text-align: center; }
 }
 /* 課程頁「地點」那格與頁尾的地址都連到地圖 */
-.fact__v a, .foot__cols a { text-decoration: none; border-bottom: 1px solid var(--line); }
-.fact__v a:hover { border-color: var(--seal); color: var(--seal); }
-.foot__cols a { border-bottom-color: var(--line-d); }
-.foot__cols a:hover { color: var(--seal-l); border-color: var(--seal-l); }
 
 /* ---------- 常見問題 ---------- */
 .faq { margin: 0; }
@@ -463,8 +473,6 @@ p:last-child { margin-bottom: 0; }
   margin: 0.7em 0 clamp(22px, 2.6vw, 30px); color: #3d3831; line-height: 2.1;
 }
 .faq dd:last-child { margin-bottom: 0; }
-.faq dd a { color: var(--seal); text-decoration: none; border-bottom: 1px solid rgba(var(--seal-rgb), 0.35); }
-.faq dd a:hover { color: var(--seal-l); border-color: var(--seal-l); }
 .lead { font-family: var(--serif); font-size: clamp(19px, 2.6vw, 23px); line-height: 2.05; color: var(--ink) !important; }
 
 /* ---------- 文章頁 ---------- */
@@ -492,8 +500,7 @@ p:last-child { margin-bottom: 0; }
 .art__fig > a { display: block; }
 .art__fig img { display: block; width: 100%; height: auto; box-shadow: 0 14px 40px rgba(16, 14, 12, 0.14), 0 1px 3px rgba(16, 14, 12, 0.12); }
 .art__fig figcaption { font-family: var(--serif); font-size: 16px; letter-spacing: 0.24em; color: var(--muted); text-align: center; margin-top: 1.2em; }
-.art__fig-dl { color: var(--seal); text-decoration: none; border-bottom: 1px solid rgba(var(--seal-rgb), 0.35); margin-left: 1.6em; }
-.art__fig-dl:hover { color: var(--seal-l); border-color: var(--seal-l); }
+.art__fig-dl { margin-left: 1.6em; }
 
 /* 正文前的自架影片。比例從 --vw / --vh 來，播放器載入前就佔好位置，版面不會跳。
    直式影片（--vh > --vw）不能撐滿 760px，不然高度會超過一個畫面：
@@ -584,8 +591,6 @@ video::cue {
 @media (min-width: 620px) { .foot__cols { grid-template-columns: repeat(3, 1fr); } }
 .foot__cols h4 { font-size: 12.5px; letter-spacing: 0.32em; color: var(--seal-l); margin-bottom: 1em; font-weight: 600; }
 .foot__cols p { font-size: 15.5px; color: rgba(245, 242, 234, 0.78); line-height: 2; }
-.foot__cols a { text-decoration: none; border-bottom: 1px solid var(--line-d); }
-.foot__cols a:hover { color: var(--seal-l); }
 .foot__bar {
   display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px;
   border-top: 1px solid var(--line-d); padding-top: 22px; padding-bottom: 26px;
@@ -665,13 +670,11 @@ video::cue {
 .scene__x p:last-child { margin-bottom: 0; }
 .scene__t { text-wrap: balance; }
 .scene__more {
-  display: inline-block; text-decoration: none; font-size: clamp(15px, 1.8vw, 17px);
-  letter-spacing: 0.2em; color: var(--paper);
-  border-bottom: 1px solid rgba(245, 242, 234, 0.4); padding-bottom: 9px;
-  transition: color 0.25s, border-color 0.25s;
+  display: inline-block; font-size: clamp(15px, 1.8vw, 17px);
+  letter-spacing: 0.2em;
 }
 .scene__more span { display: inline-block; transition: transform 0.25s; margin-left: 6px; }
-.scene__more:hover { color: var(--seal-l); border-color: var(--seal-l); }
+.scene__more:hover { color: var(--paper); }
 .scene__more:hover span { transform: translateX(6px); }
 
 .scene--end { align-items: center; min-height: 88svh; padding-top: clamp(72px, 12vh, 130px); text-align: center; }
