@@ -513,9 +513,12 @@ p:last-child { margin-bottom: 0; }
 /* 「在 Facebook 觀看原片」整串不斷行：擠不下時整條掉到下一行，不要斷在中間 */
 .art__fig--video figcaption a { white-space: nowrap; }
 /* 字幕：瀏覽器支援有限（Chrome / Safari 吃，Firefox 只吃一部分），能套就套 */
+/* 字幕跟燒錄版同一套：紙色字、墨色描邊、不鋪底色（墨・紙配色） */
 video::cue {
-  font-family: var(--serif, serif); font-size: clamp(16px, 2.6vw, 22px);
-  background: rgba(0, 0, 0, 0.55); line-height: 1.5;
+  font-family: var(--serif, serif); font-weight: 700; font-size: clamp(17px, 2.7vw, 23px);
+  color: #f5f2ea; background: transparent; line-height: 1.5;
+  text-shadow: -1px -1px 0 #16140f, 1px -1px 0 #16140f, -1px 1px 0 #16140f, 1px 1px 0 #16140f,
+    0 -1.5px 0 #16140f, 0 1.5px 0 #16140f, -1.5px 0 0 #16140f, 1.5px 0 0 #16140f, 0 2px 6px rgba(0, 0, 0, 0.7);
 }
 
 
