@@ -205,6 +205,11 @@ ffprobe -v error -select_streams v:0 -show_entries stream=width,height -show_ent
 - 影片跟 mp4 都會被 `VideoObject` 結構化資料與 `og:video` 帶出去，網址與時間直接從欄位來。
 - 有影片的文章，手記列表的卡片會多一個朱色「影片」小標記。
 - `npm run img` 不管影片，影片不需要另外產格式，但檔案會進 git，先壓到合理大小再放。
+- **Cloudflare Pages 的靜態檔不支援 Range 請求**，影片會不能拖時間軸、不能快轉（2026-09-18 上線後才發現）。
+  `functions/assets/video/[[path]].js` 是專門補這件事的 Pages Function：接 `/assets/video/*`，
+  把檔案切成 206 回去。跟 Git 連動一起部署，不用改儀表板。要本機模擬 Pages 測它，
+  用 `npx wrangler pages dev dist --port 8788 --compatibility-date=2026-05-01`（日期不能比本機 runtime 新），
+  `npm run dev` 的 serve.mjs 自己就支援 Range，測不出這個問題。
 - **`/videos/` 頁是自動生的**：`build.mjs` 的 `pageVideos()` 撈出所有有 `video:` 的文章，
   依日期排成跟手記列表一樣的卡片，點進去看文章頁的影片，不用另外維護名單。
   導覽列的「影片」與首頁「看示範影片」都指這裡。
