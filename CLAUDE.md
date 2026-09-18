@@ -204,6 +204,12 @@ ffprobe -v error -select_streams v:0 -show_entries stream=width,height -show_ent
 - 影片跟 mp4 都會被 `VideoObject` 結構化資料與 `og:video` 帶出去，網址與時間直接從欄位來。
 - 有影片的文章，手記列表的卡片會多一個朱色「影片」小標記。
 - `npm run img` 不管影片，影片不需要另外產格式，但檔案會進 git，先壓到合理大小再放。
+- **`/videos/` 頁是自動生的**：`build.mjs` 的 `pageVideos()` 撈出所有有 `video:` 的文章，
+  依日期排成跟手記列表一樣的卡片，點進去看文章頁的影片，不用另外維護名單。
+  導覽列的「影片」與首頁「看示範影片」都指這裡。
+- 手記列表的篩選列多一顆「影片」，那是**偽標籤**：`card()` 在有 `video:` 的卡片的
+  `data-tags` 補上「影片」兩個字，site.js 現成的篩選就能用，`/writings/#tag=影片` 也能分享。
+  它**不在 `TAGS` 名單裡，不能寫進 frontmatter 的 `tags:`**（寫了建置會警告）。
 
 ### 從 FB 抓片到上字幕（2026-09-18 定下來的流程，第一支是〈伏攤膀不是三個動作〉）
 
@@ -232,7 +238,9 @@ ffprobe -v error -select_streams v:0 -show_entries stream=width,height -show_ent
 
 ### 首頁 hero 的背景影片
 
-首頁（`/home/`）的 hero 照片上面疊一段靜音、自動循環、沒有控制列的影片。
+首頁（`/home/`）與課程頁（`/classes/`）的 hero 照片上面疊一段靜音、自動循環、沒有控制列的影片。
+課程頁那段是 `hero-classes.mp4` / `hero-classes-sm.mp4`（剪自〈中的境界變化〉那支），
+`hero()` 傳 `video: { src, sm }` 就會掛上，影片的 `object-position` 跟著該頁的 `pos` 走（`--vpos`）。
 照片（`hero-chisau.jpg` / `hero-chisau-tall.jpg`）**全部留著**：它是第一眼、也是備援，
 影片載好才淡入蓋上去。`/`（進站頁）沒有影片。
 

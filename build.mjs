@@ -573,6 +573,7 @@ function nav(transparent) {
     ['/about/', '關於師父'],
     ['/classes/', '課程'],
     ['/writings/', '師父手記<span class="newdot" hidden data-latest="' + LATEST + '">新</span>'],
+    ['/videos/', '影片'],
   ];
   return `<a class="skip" href="#main">跳至主要內容</a>
 <header class="nav${transparent ? ' nav--over' : ''}">
@@ -614,7 +615,7 @@ const hero = ({ img, imgTall, kicker, title, sub, cta = '', tall = false, pos = 
     // 影片的 src 故意不寫死：由 site.js 判斷（省流量模式、慢速連線、偏好減少動態）再決定要不要載。
     // 沒有 JS 就只看到照片，這是刻意的。
     video
-      ? `<video class="hero__vid" muted loop playsinline autoplay disablepictureinpicture disableremoteplayback preload="none" aria-hidden="true" tabindex="-1" data-src="/assets/video/${video.src}" data-src-sm="/assets/video/${video.sm}"></video>`
+      ? `<video class="hero__vid" muted loop playsinline autoplay disablepictureinpicture disableremoteplayback preload="none" aria-hidden="true" tabindex="-1" style="--vpos:${pos}" data-src="/assets/video/${video.src}" data-src-sm="/assets/video/${video.sm}"></video>`
       : ''
   }
   <div class="hero__veil"></div>
@@ -628,7 +629,7 @@ const hero = ({ img, imgTall, kicker, title, sub, cta = '', tall = false, pos = 
 </section>`;
 
 const card = (a) => `
-<a class="card" href="/writings/${a.slug}/" data-tags="${a.tags.join(' ')}">
+<a class="card" href="/writings/${a.slug}/" data-tags="${[...a.tags, a.video ? '影片' : ''].filter(Boolean).join(' ')}">
   <div class="card__bg bgimg" style="${bg(a.image, a.posCard || 'center 38%')}"></div>
   <div class="card__veil"></div>
   <div class="card__in">
@@ -686,7 +687,7 @@ ${hero({
     <p class="kicker">師父手記</p>
     <h2 class="sec__t">武道若夢</h2>
     <div class="cards">${feat.map(card).join('')}</div>
-    <p class="center"><a class="btn" href="/writings/">閱讀全部手記</a></p>
+    <div class="btns btns--center"><a class="btn" href="/writings/">閱讀全部手記</a><a class="btn" href="/videos/">看示範影片</a></div>
   </div>
 </section>
 
@@ -1083,7 +1084,9 @@ ${ctaBand()}
 function pageClasses() {
   const items = SYLLABUS;
   const body = `
-${hero({ img: 'team-01.jpg', kicker: '課程', title: '<span class="nb">每週二、五</span>　<span class="nb">橋下見</span>', sub: clauses('上課以實戰對練方式進行，讓觀念、功力同時進步。'), pos: 'center 25%' })}
+${hero({ img: 'team-01.jpg', kicker: '課程', title: '<span class="nb">每週二、五</span>　<span class="nb">橋下見</span>', sub: clauses('上課以實戰對練方式進行，讓觀念、功力同時進步。'), pos: 'center 25%',
+  // 師父 2026-08-28 的示範片（〈中的境界變化〉）剪一段當背景，規則同首頁
+  video: { src: 'hero-classes.mp4', sm: 'hero-classes-sm.mp4' } })}
 
 <section class="sec">
   <div class="wrap">
@@ -1163,6 +1166,9 @@ ${hero({ img: 'bridge-empty.jpg', kicker: '師父手記', title: '武道若夢',
     <div class="tagbar" role="group" aria-label="依標籤篩選">
       <button class="tag on" data-tag="" aria-pressed="true">全部</button>
       ${TAGS.map((t) => `<button class="tag" data-tag="${esc(t)}" aria-pressed="false">${esc(t)}</button>`).join('\n      ')}
+      <!-- 「影片」是偽標籤：card() 會在有 video: 的卡片的 data-tags 多補這兩個字，
+           不在 TAGS 名單裡（frontmatter 不能寫），篩選邏輯與 #tag=影片 照樣通用 -->
+      <button class="tag" data-tag="影片" aria-pressed="false">影片</button>
     </div>
     <div class="cards cards--list">${arts.map(card).join('')}</div>
   </div>
@@ -1201,6 +1207,66 @@ ${ctaBand()}
       },
       // author / publisher 是 @id 參照，被指到的節點要在同一頁上，
       // 否則 Google 只讀到一個沒有名字的空節點
+      ldSifu(),
+      ldSchool(),
+    ],
+  });
+}
+
+/**
+ * 影片頁：所有有 video: 的手記，自動生成，不用另外維護一份名單。
+ * 點卡片進文章頁看影片，這裡不另做播放器。
+ */
+function pageVideos(arts) {
+  const vids = arts.filter((a) => a.video);
+  const body = `
+${hero({
+  img: 'fu-tan-bang.jpg',
+  pos: '30% 30%',
+  kicker: '師父示範',
+  title: '影片',
+  sub: clauses('一個動作裡   蘊含豐富細微變化的打法'),
+})}
+<section class="sec sec--paper2">
+  <div class="wrap">
+    ${
+      vids.length
+        ? `<div class="cards cards--list">${vids.map(card).join('')}</div>`
+        : '<p class="center">影片整理中</p>'
+    }
+  </div>
+</section>
+${ctaBand()}
+`;
+  return layout({
+    title: '影片',
+    titleTag: '詠春示範影片｜黃英哲師父親自示範｜鷹捷詠春',
+    desc: `黃英哲師父的詠春示範影片，共 ${vids.length} 支：${vids.map((a) => `〈${a.title}〉`).join('、')}。`,
+    url: '/videos/',
+    image: '/assets/img/fu-tan-bang.jpg',
+    body,
+    preload: 'fu-tan-bang.jpg',
+    crumbs: [{ name: '影片', url: '/videos/' }],
+    ld: [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        '@id': `${SITE.url}/videos/#page`,
+        name: '詠春示範影片',
+        url: `${SITE.url}/videos/`,
+        inLanguage: 'zh-Hant',
+        // isPartOf 不填：#website 那個節點只在進站頁（/）上，
+        // 這裡指過去 Google 只會讀到一個沒有名字的空節點
+        mainEntity: {
+          '@type': 'ItemList',
+          itemListElement: vids.map((a, i) => ({
+            '@type': 'ListItem',
+            position: i + 1,
+            url: `${SITE.url}/writings/${a.slug}/`,
+            name: a.title,
+          })),
+        },
+      },
       ldSifu(),
       ldSchool(),
     ],
@@ -1422,6 +1488,7 @@ write('home/index.html', pageHome(arts));
 write('about/index.html', pageAbout());
 write('classes/index.html', pageClasses());
 write('writings/index.html', pageWritings(arts));
+write('videos/index.html', pageVideos(arts));
 arts.forEach((a, i) => write(`writings/${a.slug}/index.html`, pageArticle(a, arts[i + 1], arts[i - 1], arts)));
 
 // sitemap：lastmod 讓 Google 知道哪幾頁動過，priority 說明站內的輕重
@@ -1432,6 +1499,9 @@ const urls = [
   { u: '/classes/', lastmod: newest, priority: '0.9', changefreq: 'monthly' },
   { u: '/about/', lastmod: newest, priority: '0.8', changefreq: 'yearly' },
   { u: '/writings/', lastmod: newest, priority: '0.7', changefreq: 'weekly' },
+  ...(arts.some((a) => a.video)
+    ? [{ u: '/videos/', lastmod: arts.find((a) => a.video).date, priority: '0.7', changefreq: 'monthly' }]
+    : []),
   ...arts.map((a) => ({ u: `/writings/${a.slug}/`, lastmod: a.date, priority: '0.6', changefreq: 'yearly' })),
 ];
 write(

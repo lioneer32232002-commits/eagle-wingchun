@@ -182,7 +182,7 @@ p:last-child { margin-bottom: 0; }
 /* 背景影片：照片是第一眼與備援，影片載好（site.js 給 src）才淡入蓋上去 */
 .hero__vid {
   position: absolute; inset: 0; width: 100%; height: 100%;
-  object-fit: cover; object-position: center 35%; transform: scale(1.03);
+  object-fit: cover; object-position: var(--vpos, center 35%); transform: scale(1.03);
   opacity: 0; transition: opacity 1.2s ease; pointer-events: none;
 }
 .hero__vid.is-on { opacity: 1; }
@@ -295,6 +295,9 @@ p:last-child { margin-bottom: 0; }
 .card::after { content: ''; position: absolute; inset: 0; border: 1px solid rgba(245, 242, 234, 0.14); pointer-events: none; }
 
 .cards + .center { margin-top: clamp(32px, 4.5vw, 52px); }
+/* 深色區塊下方的一組按鈕：沿用 .btns，置中並跟卡片拉開同樣的距離 */
+.cards + .btns { margin-top: clamp(32px, 4.5vw, 52px); }
+.btns--center { justify-content: center; }
 
 .cards--list .card { min-height: 300px; }
 .cards--list .card__in { min-height: 300px; }
