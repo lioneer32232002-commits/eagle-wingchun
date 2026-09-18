@@ -554,6 +554,8 @@ video::cue {
 
 .art__sig { font-family: var(--serif); color: var(--muted); letter-spacing: 0.2em; font-size: 16px; text-align: right; margin-top: 3em !important; }
 
+/* 有影片的文章有兩組前後篇（手記順序／影片順序），site.js 只留一組；display:flex 會蓋掉 hidden，要補這條 */
+.art__nav[hidden] { display: none; }
 .art__nav {
   display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
   max-width: 900px; padding-top: clamp(30px, 5vw, 46px); padding-bottom: clamp(56px, 8vw, 90px);

@@ -1394,7 +1394,17 @@ function seriesNav(a, all) {
   </nav>`;
 }
 
-function pageArticle(a, prev, next, all) {
+/**
+ * 頁尾的前後篇。手記的上一篇／下一篇依日期，影片與純文字混排；
+ * 有影片的文章另外再輸出一組「上一部／下一部」（只在影片之間走），預設 hidden，
+ * 由 site.js 依讀者是從 /videos/ 還是手記進來的決定顯示哪一組。沒有 JS 就是手記順序。
+ */
+const artNav = (prev, next, pl, nl, extra = '') => `<nav class="wrap art__nav${extra === 'hidden' ? ' art__nav--vid' : ''}"${extra ? ' ' + extra : ''}>
+    ${prev ? `<a class="art__nav-i" href="/writings/${prev.slug}/"><span>${pl}</span><b>${esc(prev.title)}</b></a>` : '<span></span>'}
+    ${next ? `<a class="art__nav-i art__nav-i--r" href="/writings/${next.slug}/"><span>${nl}</span><b>${esc(next.title)}</b></a>` : '<span></span>'}
+  </nav>`;
+
+function pageArticle(a, prev, next, all, vprev, vnext) {
   const body = `
 <article class="art">
   <header class="art__hero">
@@ -1430,10 +1440,8 @@ function pageArticle(a, prev, next, all) {
     <p class="art__sig">— 黃英哲</p>
   </div>
   ${seriesNav(a, all)}
-  <nav class="wrap art__nav">
-    ${prev ? `<a class="art__nav-i" href="/writings/${prev.slug}/"><span>${a.video ? '上一部' : '上一篇'}</span><b>${esc(prev.title)}</b></a>` : '<span></span>'}
-    ${next ? `<a class="art__nav-i art__nav-i--r" href="/writings/${next.slug}/"><span>${a.video ? '下一部' : '下一篇'}</span><b>${esc(next.title)}</b></a>` : '<span></span>'}
-  </nav>
+  ${artNav(prev, next, '上一篇', '下一篇')}
+  ${vprev || vnext ? artNav(vprev, vnext, '上一部', '下一部', 'hidden') : ''}
 </article>
 ${ctaBand()}
 `;
@@ -1520,13 +1528,13 @@ write('about/index.html', pageAbout());
 write('classes/index.html', pageClasses(arts));
 write('writings/index.html', pageWritings(arts));
 write('videos/index.html', pageVideos(arts));
-// 有影片的文章，上一部／下一部在有影片的文章之間走（讀者多半是從 /videos/ 進來的）；
-// 純文字手記維持依日期的前後篇
+// 手記的前後篇依日期、影片與純文字混排；有影片的文章再多算一組影片之間的前後部
 const vidList = arts.filter((a) => a.video);
-arts.forEach((a) => {
-  const list = a.video ? vidList : arts;
-  const i = list.indexOf(a);
-  write(`writings/${a.slug}/index.html`, pageArticle(a, list[i + 1], list[i - 1], arts));
+arts.forEach((a, i) => {
+  const vi = vidList.indexOf(a);
+  const vprev = vi >= 0 ? vidList[vi + 1] : undefined;
+  const vnext = vi >= 0 ? vidList[vi - 1] : undefined;
+  write(`writings/${a.slug}/index.html`, pageArticle(a, arts[i + 1], arts[i - 1], arts, vprev, vnext));
 });
 
 // sitemap：lastmod 讓 Google 知道哪幾頁動過，priority 說明站內的輕重

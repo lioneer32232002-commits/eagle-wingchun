@@ -81,6 +81,21 @@
     window.addEventListener('scroll', onScroll, { passive: true });
   }
 
+  // 前後篇看讀者從哪裡來：從 /videos/ 進來的看「上一部／下一部」（只在影片之間走），
+  // 從手記、首頁進來的看依日期的上一篇／下一篇。記在 sessionStorage，沿著前後篇點下去也記得。
+  try {
+    var path = location.pathname;
+    var isArt = /^\/writings\/[^/]+\/$/.test(path);
+    if (path === '/videos/') sessionStorage.setItem('ew-nav', 'videos');
+    else if (!isArt) sessionStorage.setItem('ew-nav', 'writings');
+    var vnav = document.querySelector('.art__nav--vid');
+    if (vnav && sessionStorage.getItem('ew-nav') === 'videos') {
+      var wnav = document.querySelector('.art__nav:not(.art__nav--vid)');
+      if (wnav) wnav.hidden = true;
+      vnav.hidden = false;
+    }
+  } catch (e) { /* 無痕模式拿不到 sessionStorage 就維持手記順序 */ }
+
   // 首頁 hero 的背景影片：照片先出來，影片載好才淡入蓋上去
   var vid = document.querySelector('.hero__vid');
   if (vid) {
