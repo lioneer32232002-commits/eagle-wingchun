@@ -81,6 +81,33 @@
     window.addEventListener('scroll', onScroll, { passive: true });
   }
 
+  // 首頁 hero 的背景影片：照片先出來，影片載好才淡入蓋上去
+  var vid = document.querySelector('.hero__vid');
+  if (vid) {
+    var conn = navigator.connection || {};
+    var slow = conn.effectiveType === '2g' || conn.effectiveType === 'slow-2g';
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches || conn.saveData || slow) {
+      vid.parentNode.removeChild(vid); // 省流量／慢速／偏好靜態：留照片就好
+    } else {
+      var startVid = function () {
+        var src = (window.innerWidth < 768 ? vid.getAttribute('data-src-sm') : vid.getAttribute('data-src'));
+        if (!src) return;
+        // 只在真的播起來才淡入；自動播放被擋的話，畫面上仍是照片，不會露出影片的靜止首幀
+        vid.addEventListener('playing', function () { vid.classList.add('is-on'); });
+        vid.src = src;
+        var p = vid.play();
+        if (p && p.catch) p.catch(function () { /* 自動播放被擋就算了，留照片 */ });
+      };
+      // 等 hero 照片載完再開始，不要跟它的 preload 搶頻寬
+      var idle = function () {
+        if (window.requestIdleCallback) requestIdleCallback(startVid, { timeout: 2000 });
+        else setTimeout(startVid, 200);
+      };
+      if (document.readyState === 'complete') idle();
+      else window.addEventListener('load', idle);
+    }
+  }
+
   // 捲入淡出
   var targets = document.querySelectorAll('.sec .wrap > *, .band__in > *, .cta__in > *');
   if (!('IntersectionObserver' in window) || matchMedia('(prefers-reduced-motion: reduce)').matches) return;

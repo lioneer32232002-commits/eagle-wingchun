@@ -400,6 +400,21 @@ function loadArticles() {
         if (meta[k]) meta[k] = typo(meta[k]);
       });
       const tags = (meta.tags || '').split(/[、,]/).map((s) => s.trim()).filter(Boolean);
+      // 影片（選填）：assets/video/ 裡的自架 mp4。
+      //   video:    檔名（h264 + aac）
+      //   videoSub: 同目錄的 WebVTT 字幕，有就預設開啟
+      //   videoW / videoH: 影片像素寬高，用來算 aspect-ratio，載入時版面才不會跳
+      //   videoDur: 長度（秒），給 VideoObject 的 duration
+      //   videoDate: 影片原本在 FB 上傳的日期，沒填就用文章的 date
+      //   videoSrc: 原片連結，圖說會出「在 Facebook 觀看原片」
+      //   videoCap: 圖說文字
+      // poster 一律用文章的 image:（hero 那張），不另外開欄位。
+      if (meta.video) {
+        ['videoW', 'videoH', 'videoDur'].forEach((k) => {
+          if (meta[k]) meta[k] = Number(meta[k]);
+        });
+        if (meta.videoCap) meta.videoCap = typo(meta.videoCap);
+      }
       // 先做標點與空格正規化，後面算行寬才會準
       // added：放上網站的日期，選填，沒填就等於 date（補登舊文時才需要另外填）
       return { ...meta, tags, added: meta.added || meta.date, body: typo(m[2].trim()), file: f };
@@ -411,6 +426,18 @@ function loadArticles() {
   if (unknown.size) {
     console.warn(`⚠ 有 ${unknown.size} 個標籤不在 TAGS 名單裡：`);
     [...unknown].slice(0, 10).forEach((x) => console.warn('  ' + x));
+  }
+  // 保險：影片或字幕的檔名打錯，頁面上只會看到一個黑框
+  const missing = [];
+  list.forEach((a) => {
+    [a.video, a.videoSub].filter(Boolean).forEach((f2) => {
+      if (!fs.existsSync(path.join(ROOT, 'assets/video', f2))) missing.push(`${a.file}: ${f2}`);
+    });
+    if (a.video && !(a.videoW && a.videoH)) missing.push(`${a.file}: ${a.video} 少了 videoW / videoH`);
+  });
+  if (missing.length) {
+    console.warn(`⚠ 有 ${missing.length} 個影片檔案或欄位有問題：`);
+    missing.slice(0, 10).forEach((x) => console.warn('  ' + x));
   }
   return list;
 }
@@ -575,12 +602,19 @@ function footer() {
 }
 
 /* 共用元件 */
-const hero = ({ img, imgTall, kicker, title, sub, cta = '', tall = false, pos = 'center 40%', posTall = 'center 50%' }) => `
+const hero = ({ img, imgTall, kicker, title, sub, cta = '', tall = false, pos = 'center 40%', posTall = 'center 50%', video = null }) => `
 <section class="hero${tall ? ' hero--tall' : ''}${imgTall ? ' hero--swap' : ''}">
   <div class="hero__bg bgimg" style="${bg(img, pos)}"></div>
   ${
     imgTall
       ? `<div class="hero__bg hero__bg--tall bgimg" style="${bg(imgTall, posTall)}"></div>`
+      : ''
+  }
+  ${
+    // 影片的 src 故意不寫死：由 site.js 判斷（省流量模式、慢速連線、偏好減少動態）再決定要不要載。
+    // 沒有 JS 就只看到照片，這是刻意的。
+    video
+      ? `<video class="hero__vid" muted loop playsinline autoplay disablepictureinpicture disableremoteplayback preload="none" aria-hidden="true" tabindex="-1" data-src="/assets/video/${video.src}" data-src-sm="/assets/video/${video.sm}"></video>`
       : ''
   }
   <div class="hero__veil"></div>
@@ -598,7 +632,9 @@ const card = (a) => `
   <div class="card__bg bgimg" style="${bg(a.image, a.posCard || 'center 38%')}"></div>
   <div class="card__veil"></div>
   <div class="card__in">
-    <p class="card__date">${fmtDate(a.date)}${a.tags.length ? `<span class="card__tag">${a.tags.join('・')}</span>` : ''}</p>
+    <p class="card__date">${fmtDate(a.date)}${a.tags.length ? `<span class="card__tag">${a.tags.join('・')}</span>` : ''}${
+      a.video ? '<span class="card__vid">影片</span>' : ''
+    }</p>
     <h3 class="card__t">${esc(a.title)}</h3>
     <p class="card__x">${rhythm(a.excerpt, 15)}</p>
     <span class="card__more">閱讀全文</span>
@@ -621,6 +657,7 @@ ${hero({
   tall: true,
   // 直式照片：桌機版裁上下，取到光暈與人的上半身
   pos: 'center 35%',
+  video: { src: 'hero-loop.mp4', sm: 'hero-loop-sm.mp4' },
 })}
 
 <section class="band">
@@ -1180,6 +1217,64 @@ const figMaster = (name) => {
   return png !== name && has(png) ? png : name;
 };
 
+/** 秒數轉 ISO 8601（81 → PT1M21S），給 VideoObject 的 duration */
+const isoDur = (sec) => {
+  const s = Number(sec);
+  if (!Number.isFinite(s) || s <= 0) return undefined;
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const ss = Math.round(s % 60);
+  return `PT${h ? `${h}H` : ''}${m ? `${m}M` : ''}${ss || (!h && !m) ? `${ss}S` : ''}`;
+};
+
+/**
+ * 正文前的自架影片（師父 FB 上的示範片）。
+ * aspect-ratio 從 --vw / --vh 算，載入前就佔好位置，版面不會跳；
+ * 直式影片由 CSS 依比例把寬度收窄，才不會高過一個畫面。
+ * poster 用文章的 hero 圖，字幕軌 default 讓中文字幕預設開啟。
+ */
+function videoFig(a) {
+  if (!a.video) return '';
+  const vw = a.videoW || 16;
+  const vh = a.videoH || 9;
+  const poster = a.image ? ` poster="/assets/img/${a.image}"` : '';
+  const dim = a.videoW && a.videoH ? ` width="${vw}" height="${vh}"` : '';
+  const track = a.videoSub
+    ? `\n      <track kind="subtitles" srclang="zh-Hant" label="中文字幕" src="/assets/video/${a.videoSub}" default>`
+    : '';
+  const link = a.videoSrc
+    ? `${a.videoCap ? '　' : ''}<a href="${esc(a.videoSrc)}" target="_blank" rel="noopener">在 Facebook 觀看原片</a>`
+    : '';
+  const cap = a.videoCap || a.videoSrc ? `\n    <figcaption>${esc(a.videoCap || '')}${link}</figcaption>` : '';
+  return `<figure class="art__fig art__fig--video" style="--vw:${vw};--vh:${vh}">
+    <video controls playsinline preload="metadata"${poster}${dim}>
+      <source src="/assets/video/${a.video}" type="video/mp4">${track}
+    </video>${cap}
+  </figure>`;
+}
+
+/** 影片的結構化資料。Google 的影片索引要 thumbnail、uploadDate 這幾個欄位才吃 */
+const ldVideo = (a) => {
+  if (!a.video) return null;
+  const thumb = a.ogImage || a.figure || a.image;
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'VideoObject',
+    '@id': `${SITE.url}/writings/${a.slug}/#video`,
+    name: a.title,
+    description: a.excerpt,
+    thumbnailUrl: `${SITE.url}/assets/img/${thumb}`,
+    uploadDate: a.videoDate || a.date,
+    duration: isoDur(a.videoDur),
+    // contentUrl 就是 mp4 本身；embedUrl 是給播放器頁用的，這裡沒有，不要亂填
+    contentUrl: `${SITE.url}/assets/video/${a.video}`,
+    width: a.videoW || undefined,
+    height: a.videoH || undefined,
+    inLanguage: 'zh-Hant',
+    publisher: { '@id': `${SITE.url}/#school` },
+  };
+};
+
 /** 系列文章導覽：同一個 series 的篇章依 part 排序 */
 function seriesNav(a, all) {
   if (!a.series) return '';
@@ -1216,6 +1311,7 @@ function pageArticle(a, prev, next, all) {
     </div>
   </header>
   ${a.quote ? `<blockquote class="pull"><p>${rhythm(a.quote, 16)}</p></blockquote>` : ''}
+  ${videoFig(a)}
   ${
     a.figure
       ? `<figure class="art__fig">
@@ -1259,10 +1355,19 @@ ${ctaBand()}
     body,
     ogType: 'article',
     preload: a.image,
-    extraMeta: `<meta property="article:published_time" content="${a.date}">
+    extraMeta:
+      `<meta property="article:published_time" content="${a.date}">
 <meta property="article:author" content="${SITE.seo.sifu}">
 <meta property="article:section" content="詠春拳">
-`,
+` +
+      (a.video
+        ? `<meta property="og:video" content="${SITE.url}/assets/video/${a.video}">
+<meta property="og:video:secure_url" content="${SITE.url}/assets/video/${a.video}">
+<meta property="og:video:type" content="video/mp4">
+${a.videoW ? `<meta property="og:video:width" content="${a.videoW}">\n` : ''}${
+            a.videoH ? `<meta property="og:video:height" content="${a.videoH}">\n` : ''
+          }`
+        : ''),
     crumbs: [{ name: '師父手記', url: '/writings/' }, { name: a.title, url: `/writings/${a.slug}/` }],
     ld: [
       {
@@ -1292,7 +1397,10 @@ ${ctaBand()}
         articleSection: a.series || '詠春拳理',
         keywords: ['詠春拳', '黃系詠春', a.title, ...a.tags],
         wordCount: [...a.body.replace(/\s/g, '')].length,
+        // 影片節點在同一頁上，指過去就好
+        video: a.video ? { '@id': `${SITE.url}/writings/${a.slug}/#video` } : undefined,
       },
+      ldVideo(a),
       ldSifu(),
       ldSchool(),
     ],

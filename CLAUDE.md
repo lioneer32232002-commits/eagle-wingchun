@@ -32,6 +32,14 @@ figure: sketch.jpg    # 選填，要整張完整顯示在正文前的插圖（�
 figureAlt: 圖片的替代文字
 figureCap: 圖下方的小字說明   # 選填
 ogImage: sketch-og.jpg  # 選填，分享用的 1200×630 橫版；沒填就用 figure，再沒有就用 image
+video: fu-tan-bang.mp4        # 選填，assets/video/ 裡的自架 mp4（h264 + aac），顯示在正文前
+videoSub: fu-tan-bang.vtt     # 選填，同目錄的 WebVTT 字幕，會預設開啟
+videoW: 1280                  # 影片像素寬，有 video: 就一定要填
+videoH: 720                   # 影片像素高
+videoDur: 81                  # 選填，長度（秒）
+videoDate: 2023-09-13         # 選填，影片原本在 FB 上傳的日期，沒填就用 date
+videoSrc: https://www.facebook.com/...   # 選填，原片連結，圖說會出「在 Facebook 觀看原片」
+videoCap: 圖下方的小字說明    # 選填
 ---
 第一段第一行
 第一段第二行
@@ -174,6 +182,91 @@ ffmpeg -ss 52 -i "影片/檔名.mp4" -frames:v 1 -q:v 3 assets/img/新檔名.jpg
 有 `note` 的項目，課程頁會多一段引文與「師父手記〈…〉」的連結；首頁只顯示標題與說明。
 
 **手記裡沒提到的項目就不要硬湊。**
+
+## 手記裡的影片
+
+師父 FB 上的示範影片，轉成自架的 mp4 放 `assets/video/`（不走 FB 內嵌，讀者不必登入、
+也不會被追蹤），文章 frontmatter 填 `video:` 那組欄位，影片就出現在正文前、插圖之前。
+`figure:` 與 `video:` 可以同一篇並存（先影片，後插圖）。
+
+```bash
+# FB 下載的檔多半已經是 h264+aac，要轉再轉；順便把寬高印出來填 videoW / videoH
+ffmpeg -i 原片.mp4 -c:v libx264 -crf 23 -preset slow -pix_fmt yuv420p -c:a aac -b:a 128k -movflags +faststart assets/video/X.mp4
+ffprobe -v error -select_streams v:0 -show_entries stream=width,height -show_entries format=duration assets/video/X.mp4
+```
+
+- **`-movflags +faststart` 不要漏**，不然瀏覽器要下載完整支才能開始播。
+- **`videoW` / `videoH` 一定要填**：CSS 用它算 `aspect-ratio`，播放器載入前就佔好位置，
+  版面不會跳。沒填建置會警告。
+- poster 一律用文章的 `image:`（hero 那張），不另外開欄位。
+- 字幕是 WebVTT（`X.vtt`，UTF-8），`videoSub:` 填檔名，`<track default>` 會讓它預設開啟。
+- 直式影片不會撐滿 760px：CSS 依比例把寬度收到「高度不超過 80vh」，橫式維持 760px。
+- 影片跟 mp4 都會被 `VideoObject` 結構化資料與 `og:video` 帶出去，網址與時間直接從欄位來。
+- 有影片的文章，手記列表的卡片會多一個朱色「影片」小標記。
+- `npm run img` 不管影片，影片不需要另外產格式，但檔案會進 git，先壓到合理大小再放。
+
+### 從 FB 抓片到上字幕（2026-09-18 定下來的流程，第一支是〈伏攤膀不是三個動作〉）
+
+1. **抓片**：`yt-dlp -f "hd/best" --merge-output-format mp4 -o src.mp4 <FB 影片網址>`。
+   師父的影片是公開的，不用 cookie。同時 `yt-dlp -J` 把貼文文字存下來（UTF-8），
+   那段貼文就是文章正文——跟手記一樣，一個字都不改，只調換行；結尾的 `#鷹捷詠春` 標籤不放。
+   `upload_date` 填 `date:` 與 `videoDate:`，今天填 `added:`。
+2. **轉檔**：FB 給的多半是 vp9，iOS 不吃，一定要轉 h264。夜拍雜訊多，
+   `-crf 27 -b:a 96k` 才壓得到 12MB 左右（crf 23 會到 20MB）。
+3. **poster**：從影片抽一張兩人正臉、動作清楚的畫面當 `image:`（`ffmpeg -vf "select='eq(n\,幀數)'" -vsync vfr`），
+   跑 `npm run img`。注意 `npm run img` 偶爾會順手重寫某張舊 webp，commit 前 `git status` 看一下，
+   無關的 webp 用 `git checkout` 還原。
+4. **逐字稿**：`faster-whisper` 的 `large-v3`，CPU int8 就跑得動（81 秒的片約 2 分鐘）。
+   這台 Windows 沒開開發者模式，要先設 `HF_HUB_DISABLE_SYMLINKS=1` 不然模型下載會失敗。
+   `initial_prompt` 餵貼文文字加「以下是繁體中文。」，輸出再過 OpenCC `s2twp`。
+   拿 `word_timestamps=True` 的逐字時間戳來切字幕。
+5. **校對是人做的，不是模型做的**。詠春術語它一定會錯：伏攤膀聽成「反攤輔」「擋攤斧」「攤綁」，
+   日字衝拳聽成「日充熊架」，制式聽成「自私」「姿勢」。對不出來的字**問使用者**，
+   他能聽原片；不要自己猜一個通順的詞填上去。
+   師父念完「伏攤膀」常會再用廣東話念一次，那段不上字幕。
+6. **字幕格式**：WebVTT，一個 cue 一行，不超過 16 個全形字，句尾不加標點，
+   句中停頓用全形空格（跟手記排版同一個呼吸）。cue 的起訖取逐字時間戳，
+   同一句話說兩次就切成兩個 cue。
+7. **另外燒一份**：`tools/` 沒有腳本，用 ffmpeg `subtitles=` 濾鏡把 vtt（先轉 ass）燒進畫面，
+   出 `X-sub.mp4` 交給使用者重傳 FB / LINE 用。這個檔不進 git。
+
+### 首頁 hero 的背景影片
+
+首頁（`/home/`）的 hero 照片上面疊一段靜音、自動循環、沒有控制列的影片。
+照片（`hero-chisau.jpg` / `hero-chisau-tall.jpg`）**全部留著**：它是第一眼、也是備援，
+影片載好才淡入蓋上去。`/`（進站頁）沒有影片。
+
+| 檔案 | 規格 | 用在 |
+| --- | --- | --- |
+| `assets/video/hero-loop.mp4` | 1280×720、30fps、crf 28、無音軌、+faststart | 視窗寬 ≥ 768px |
+| `assets/video/hero-loop-sm.mp4` | 640×360、crf 30 | 視窗寬 < 768px |
+
+目標大小 3MB / 1MB 以內（現在是 2.3MB / 0.66MB）。hero 的壓黑漸層很重，
+手機版用 640 寬完全看不出來，不要為了畫質把它放大。
+
+**`<video>` 的 `src` 故意由 JS 給**（樣板只寫 `data-src` / `data-src-sm`）。
+`site.js` 會先擋掉三種情況、直接把整個元素 `remove()`：`prefers-reduced-motion: reduce`、
+`navigator.connection.saveData`、`effectiveType` 是 `2g` / `slow-2g`。
+其餘才在 `window` 的 `load` 之後（`requestIdleCallback`）設 src，不跟 hero 照片的 preload 搶頻寬；
+`play()` 的 promise 一定要 catch，淡入的 `is-on` 只在 `playing` 事件才加：自動播放被擋就維持照片，不會露出影片的靜止首幀。
+**沒有 JS 就沒有影片**，只看到照片，這是刻意的。
+
+換片段：來源是師父 FB 那支夜間橋下示範（`yt-dlp` 抓的 `src.mp4`，1280×720 vp9）。
+現在取的是 **29.5 – 46.0 秒**（16.5 秒），這個起訖是比對首尾幀挑的 ——
+兩人都在畫面中央搭手、姿勢與景框接近，循環接點才不會跳。
+換段落時先抽首尾幀比一下（`ffmpeg -ss T -frames:v 1`，再用 `psnr` 濾鏡對一對），
+不要只看秒數順眼。
+
+```bash
+ffmpeg -y -ss 29.5 -t 16.5 -i src.mp4 -an -vf "fps=30,scale=1280:720" \
+  -c:v libx264 -crf 28 -preset slow -pix_fmt yuv420p -movflags +faststart assets/video/hero-loop.mp4
+ffmpeg -y -ss 29.5 -t 16.5 -i src.mp4 -an -vf "fps=30,scale=640:360" \
+  -c:v libx264 -crf 30 -preset slow -pix_fmt yuv420p -movflags +faststart assets/video/hero-loop-sm.mp4
+```
+
+`.hero__vid` 的 `object-position` 桌機是 `center 35%`（跟照片的 `pos:` 一致），
+手機改 `center center` —— 手機的照片是直式、影片是橫式，cover 之後上下不裁、左右裁很多，
+兩人剛好在正中間。
 
 ## 配圖要先跑 `npm run img`
 

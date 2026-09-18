@@ -179,6 +179,17 @@ p:last-child { margin-bottom: 0; }
   .hero--swap .hero__bg { display: none; }
   .hero--swap .hero__bg--tall { display: block; }
 }
+/* 背景影片：照片是第一眼與備援，影片載好（site.js 給 src）才淡入蓋上去 */
+.hero__vid {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; object-position: center 35%; transform: scale(1.03);
+  opacity: 0; transition: opacity 1.2s ease; pointer-events: none;
+}
+.hero__vid.is-on { opacity: 1; }
+/* 手機的照片是直式（posTall），影片是橫式：cover 之後上下不裁、左右裁很多，
+   兩人在畫面中央，object-position 置中就好 */
+@media (max-width: 767px) { .hero__vid { object-position: center center; } }
+@media (prefers-reduced-motion: reduce) { .hero__vid { display: none; } }
 .hero__veil {
   position: absolute; inset: 0;
   background: linear-gradient(180deg, rgba(16, 14, 12, 0.72) 0%, rgba(16, 14, 12, 0.5) 38%, rgba(16, 14, 12, 0.86) 100%);
@@ -269,6 +280,12 @@ p:last-child { margin-bottom: 0; }
 .card__in { position: relative; padding: clamp(24px, 3vw, 32px); display: flex; flex-direction: column; justify-content: flex-end; min-height: 340px; }
 .card__date { font-size: 12.5px; letter-spacing: 0.3em; color: var(--muted-d); margin-bottom: 0.9em; }
 .card__tag { margin-left: 12px; color: var(--muted-d); letter-spacing: 0.14em; }
+/* 有影片的手記，樣式跟導覽列的「新」徽章同一組 */
+.card__vid {
+  display: inline-block; margin-left: 10px; padding: 1px 5px 2px; font-size: 10.5px; line-height: 1;
+  letter-spacing: 0; font-family: var(--serif); font-weight: 700; color: var(--paper);
+  background: var(--seal); border-radius: 3px; vertical-align: 0.2em;
+}
 .card__t { font-size: clamp(22px, 2.6vw, 27px); letter-spacing: 0.1em; margin-bottom: 0.55em; }
 .card__x { font-size: 16px; line-height: 1.95; text-wrap: pretty; color: rgba(245, 242, 234, 0.76); margin-bottom: 1.2em; }
 .card__more { font-size: 13.5px; letter-spacing: 0.24em; color: var(--seal-l); }
@@ -474,6 +491,22 @@ p:last-child { margin-bottom: 0; }
 .art__fig figcaption { font-family: var(--serif); font-size: 16px; letter-spacing: 0.24em; color: var(--muted); text-align: center; margin-top: 1.2em; }
 .art__fig-dl { color: var(--seal); text-decoration: none; border-bottom: 1px solid rgba(var(--seal-rgb), 0.35); margin-left: 1.6em; }
 .art__fig-dl:hover { color: var(--seal-l); border-color: var(--seal-l); }
+
+/* 正文前的自架影片。比例從 --vw / --vh 來，播放器載入前就佔好位置，版面不會跳。
+   直式影片（--vh > --vw）不能撐滿 760px，不然高度會超過一個畫面：
+   用 80vh 反推最寬能到多少，取兩者的小值；橫式算出來一定大於 760，維持原樣。 */
+.art__fig--video { max-width: min(760px, calc(80vh * var(--vw) / var(--vh))); }
+.art__fig--video video {
+  display: block; width: 100%; height: auto; aspect-ratio: var(--vw) / var(--vh);
+  background: #000; box-shadow: 0 14px 40px rgba(16, 14, 12, 0.14), 0 1px 3px rgba(16, 14, 12, 0.12);
+}
+/* 「在 Facebook 觀看原片」整串不斷行：擠不下時整條掉到下一行，不要斷在中間 */
+.art__fig--video figcaption a { white-space: nowrap; }
+/* 字幕：瀏覽器支援有限（Chrome / Safari 吃，Firefox 只吃一部分），能套就套 */
+video::cue {
+  font-family: var(--serif, serif); font-size: clamp(16px, 2.6vw, 22px);
+  background: rgba(0, 0, 0, 0.55); line-height: 1.5;
+}
 
 
 .art__body { max-width: 460px; padding-top: clamp(48px, 7vw, 84px); padding-bottom: clamp(24px, 4vw, 40px); font-family: var(--serif); }
