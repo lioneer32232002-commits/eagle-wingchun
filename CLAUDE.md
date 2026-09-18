@@ -39,6 +39,7 @@ videoH: 720                   # 影片像素高
 videoDur: 81                  # 選填，長度（秒）
 videoDate: 2023-09-13         # 選填，影片原本在 FB 上傳的日期，沒填就用 date
 videoSrc: https://www.facebook.com/...   # 選填，原片連結，圖說會出「在 Facebook 觀看原片」
+videoLoop: zhong-loop.mp4     # 選填，hero 背景用的循環片（`npm run loop` 剪的）
 videoCap: 圖下方的小字說明    # 選填
 ---
 第一段第一行
@@ -235,22 +236,38 @@ ffprobe -v error -select_streams v:0 -show_entries stream=width,height -show_ent
    同一句話說兩次就切成兩個 cue。
 7. **另外燒一份**：`tools/` 沒有腳本，用 ffmpeg `subtitles=` 濾鏡把 vtt（先轉 ass）燒進畫面，
    出 `X-sub.mp4` 交給使用者重傳 FB / LINE 用。這個檔不進 git。
+8. **剪一段循環片**：`npm run loop src.mp4 起秒 迄秒 <slug>`，frontmatter 填
+   `videoLoop: <slug>-loop.mp4`，`/videos/` 的 hero 就自動換成這一支（見下一節）。
+   **挑接點要看首尾幀**：兩人都在畫面中、姿勢與景框相近，循環回頭才不會跳；
+   先 `ffmpeg -ss T -frames:v 1` 抽首尾幀比一比（或用 `psnr` 濾鏡對），不要只看秒數順眼。
 
-### 首頁 hero 的背景影片
+### hero 的背景影片
 
-首頁（`/home/`）與課程頁（`/classes/`）的 hero 照片上面疊一段靜音、自動循環、沒有控制列的影片。
-課程頁那段是 `hero-classes.mp4` / `hero-classes-sm.mp4`（剪自〈中的境界變化〉那支），
-`hero()` 傳 `video: { src, sm }` 就會掛上，影片的 `object-position` 跟著該頁的 `pos` 走（`--vpos`）。
-照片（`hero-chisau.jpg` / `hero-chisau-tall.jpg`）**全部留著**：它是第一眼、也是備援，
+首頁（`/home/`）、課程頁（`/classes/`）與影片頁（`/videos/`）的 hero 照片上面疊一段靜音、
+自動循環、沒有控制列的影片。`hero()` 傳 `video: { src, sm }` 就會掛上，影片的
+`object-position` 跟著該頁的 `pos` 走（`--vpos`）。照片**全部留著**：它是第一眼、也是備援，
 影片載好才淡入蓋上去。`/`（進站頁）沒有影片。
+
+**檔名跟文章綁定**：`assets/video/<slug>-loop.mp4` 與 `<slug>-loop-sm.mp4`。
+文章 frontmatter 只填 `videoLoop: <slug>-loop.mp4`，`-sm` 那份由檔名推導（`loopOf()`），
+不另開欄位。兩份少一份，建置會警告。
 
 | 檔案 | 規格 | 用在 |
 | --- | --- | --- |
-| `assets/video/hero-loop.mp4` | 1280×720、30fps、crf 28、無音軌、+faststart | 視窗寬 ≥ 768px |
-| `assets/video/hero-loop-sm.mp4` | 640×360、crf 30 | 視窗寬 < 768px |
+| `assets/video/<slug>-loop.mp4` | 1280×720、30fps、crf 28、無音軌、+faststart | 視窗寬 ≥ 768px |
+| `assets/video/<slug>-loop-sm.mp4` | 640×360、crf 30 | 視窗寬 < 768px |
 
-目標大小 3MB / 1MB 以內（現在是 2.3MB / 0.66MB）。hero 的壓黑漸層很重，
-手機版用 640 寬完全看不出來，不要為了畫質把它放大。
+目標大小 3MB / 1MB 以內（現在 `fu-tan-bang-loop` 2.3MB / 0.66MB、`zhong-loop` 1.5MB / 0.40MB）。
+hero 的壓黑漸層很重，手機版用 640 寬完全看不出來，不要為了畫質把它放大。
+
+哪一頁用哪一支：
+
+- **`/videos/`** 自動取**最新一篇有 `videoLoop:` 的手記**（`pageVideos()`），
+  連 hero 照片、`pos:`、OG 圖與 preload 都一起跟著那一篇走。上傳新影片時只要照流程
+  放檔案、填 `videoLoop:`，程式不用改。一篇都沒有就退回 `fu-tan-bang.jpg`、不放影片。
+- **首頁與課程頁**由 `build.mjs` 最上面的 `HERO_LOOPS = { home: 'fu-tan-bang', classes: 'zhong' }`
+  指定，**刻意不自動換** —— 那兩段是比對過首尾幀才挑出來的，新影片未必有同樣適合的段落，
+  要人看過再決定。要換就改這個常數。
 
 **`<video>` 的 `src` 故意由 JS 給**（樣板只寫 `data-src` / `data-src-sm`）。
 `site.js` 會先擋掉三種情況、直接把整個元素 `remove()`：`prefers-reduced-motion: reduce`、
@@ -259,18 +276,20 @@ ffprobe -v error -select_streams v:0 -show_entries stream=width,height -show_ent
 `play()` 的 promise 一定要 catch，淡入的 `is-on` 只在 `playing` 事件才加：自動播放被擋就維持照片，不會露出影片的靜止首幀。
 **沒有 JS 就沒有影片**，只看到照片，這是刻意的。
 
-換片段：來源是師父 FB 那支夜間橋下示範（`yt-dlp` 抓的 `src.mp4`，1280×720 vp9）。
-現在取的是 **29.5 – 46.0 秒**（16.5 秒），這個起訖是比對首尾幀挑的 ——
-兩人都在畫面中央搭手、姿勢與景框接近，循環接點才不會跳。
-換段落時先抽首尾幀比一下（`ffmpeg -ss T -frames:v 1`，再用 `psnr` 濾鏡對一對），
-不要只看秒數順眼。
+剪片用 `npm run loop`，不要自己敲 ffmpeg（規格、`-an`、`+faststart` 都在腳本裡）：
 
 ```bash
-ffmpeg -y -ss 29.5 -t 16.5 -i src.mp4 -an -vf "fps=30,scale=1280:720" \
-  -c:v libx264 -crf 28 -preset slow -pix_fmt yuv420p -movflags +faststart assets/video/hero-loop.mp4
-ffmpeg -y -ss 29.5 -t 16.5 -i src.mp4 -an -vf "fps=30,scale=640:360" \
-  -c:v libx264 -crf 30 -preset slow -pix_fmt yuv420p -movflags +faststart assets/video/hero-loop-sm.mp4
+npm run loop <來源.mp4> <起秒> <迄秒> <slug>
+npm run loop src.mp4 62.5 75.5 zhong     # → assets/video/zhong-loop.mp4 與 -sm
 ```
+
+來源是 `yt-dlp` 抓下來的原片（`src.mp4`）。直式來源會自動改以高度為準（`-2:1280` / `-2:640`），
+跑完印出兩個檔的大小，超過 3MB / 1MB 會警告。
+
+`fu-tan-bang-loop` 取的是那支夜間橋下示範的 **29.5 – 46.0 秒**、`zhong-loop` 是 **62.5 – 75.5 秒**。
+這些起訖都是比對首尾幀挑的 —— 兩人都在畫面中央搭手、姿勢與景框接近，循環接點才不會跳。
+換段落時先抽首尾幀比一下（`ffmpeg -ss T -frames:v 1`，再用 `psnr` 濾鏡對一對），
+不要只看秒數順眼。
 
 `.hero__vid` 的 `object-position` 桌機是 `center 35%`（跟照片的 `pos:` 一致），
 手機改 `center center` —— 手機的照片是直式、影片是橫式，cover 之後上下不裁、左右裁很多，
@@ -336,6 +355,8 @@ jpg 原檔不會被動到，webp 要一起 commit —— Cloudflare 的建置環
 ```bash
 npm run dev     # 建置 + 本機預覽 http://localhost:4321
 npm run build   # 只建置到 dist/
+npm run img     # assets/img/ 的新 jpg 產 webp
+npm run loop    # 剪 hero 背景循環片：npm run loop src.mp4 起 迄 slug
 ```
 
 改完 push 到 `main`，Cloudflare Pages 會自動重新部署到 https://eagle-wingchun.pages.dev

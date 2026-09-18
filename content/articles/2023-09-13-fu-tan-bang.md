@@ -16,6 +16,7 @@ videoH: 720
 videoDur: 81
 videoDate: 2023-09-13
 videoSrc: https://www.facebook.com/huang.ying.zhe.322652/videos/1328591394712669
+videoLoop: fu-tan-bang-loop.mp4
 videoCap: 黃英哲　示範
 ---
 對我來說  伏攤膀(耕)不是三個動作   常常是一個動作

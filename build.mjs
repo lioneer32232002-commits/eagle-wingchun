@@ -55,6 +55,21 @@ const NB_MAX = 15; // 不可斷行詞組的寬度上限，手機版容得下
 // 手記的標籤，固定這五種；順序就是篩選列的順序
 const TAGS = ['套路', '功體', '接手', '心法', '隨筆'];
 
+// 首頁與課程頁 hero 疊的循環片，指定是哪一篇手記剪出來的。
+// 這兩頁**刻意不自動換**：首頁那段（搭手、兩人都在中央）與課程頁那段是比對過首尾幀
+// 才挑出來的，換新影片時未必有同樣適合的段落，要人看過再決定。
+// `/videos/` 頁不同，它自動取最新一篇有 videoLoop 的手記。
+const HERO_LOOPS = { home: 'fu-tan-bang', classes: 'zhong' };
+
+/**
+ * 文章的 hero 循環片：`videoLoop: X-loop.mp4`，手機版的 `-sm` 由檔名推導，不另開欄位。
+ * 沒填就回 null，`hero()` 收到 null 會整個略過（沒有影片，只剩照片）。
+ */
+const loopOf = (a) =>
+  a && a.videoLoop
+    ? { src: a.videoLoop, sm: a.videoLoop.replace(/\.mp4$/, '-sm.mp4') }
+    : null;
+
 /* ---------- 中文排版規則 ---------- */
 
 /** 半形標點轉全形、中英數之間補半形空格、刪掉手機打字留下的單獨句點 */
@@ -408,6 +423,8 @@ function loadArticles() {
       //   videoDate: 影片原本在 FB 上傳的日期，沒填就用文章的 date
       //   videoSrc: 原片連結，圖說會出「在 Facebook 觀看原片」
       //   videoCap: 圖說文字
+      //   videoLoop: hero 背景用的循環片（`X-loop.mp4`，`npm run loop` 剪的），
+      //              `/videos/` 頁會自動取最新一篇有這個欄位的文章
       // poster 一律用文章的 image:（hero 那張），不另外開欄位。
       if (meta.video) {
         ['videoW', 'videoH', 'videoDur'].forEach((k) => {
@@ -434,6 +451,13 @@ function loadArticles() {
       if (!fs.existsSync(path.join(ROOT, 'assets/video', f2))) missing.push(`${a.file}: ${f2}`);
     });
     if (a.video && !(a.videoW && a.videoH)) missing.push(`${a.file}: ${a.video} 少了 videoW / videoH`);
+    // 循環片：大小兩份都要在，少一份手機（或桌機）那邊就只剩照片
+    const loop = loopOf(a);
+    if (loop) {
+      [loop.src, loop.sm].forEach((f2) => {
+        if (!fs.existsSync(path.join(ROOT, 'assets/video', f2))) missing.push(`${a.file}: ${f2}`);
+      });
+    }
   });
   if (missing.length) {
     console.warn(`⚠ 有 ${missing.length} 個影片檔案或欄位有問題：`);
@@ -658,7 +682,8 @@ ${hero({
   tall: true,
   // 直式照片：桌機版裁上下，取到光暈與人的上半身
   pos: 'center 35%',
-  video: { src: 'hero-loop.mp4', sm: 'hero-loop-sm.mp4' },
+  // 這一段是挑過的，不跟著最新影片換；哪一篇見 HERO_LOOPS
+  video: loopOf(arts.find((a) => a.slug === HERO_LOOPS.home)),
 })}
 
 <section class="band">
@@ -1081,12 +1106,12 @@ ${ctaBand()}
   });
 }
 
-function pageClasses() {
+function pageClasses(arts) {
   const items = SYLLABUS;
   const body = `
 ${hero({ img: 'team-01.jpg', kicker: '課程', title: '<span class="nb">每週二、五</span>　<span class="nb">橋下見</span>', sub: clauses('上課以實戰對練方式進行，讓觀念、功力同時進步。'), pos: 'center 25%',
-  // 師父 2026-08-28 的示範片（〈中的境界變化〉）剪一段當背景，規則同首頁
-  video: { src: 'hero-classes.mp4', sm: 'hero-classes-sm.mp4' } })}
+  // 師父的示範片剪一段當背景，規則同首頁；哪一篇見 HERO_LOOPS，一樣不自動換
+  video: loopOf(arts.find((a) => a.slug === HERO_LOOPS.classes)) })}
 
 <section class="sec">
   <div class="wrap">
@@ -1219,13 +1244,19 @@ ${ctaBand()}
  */
 function pageVideos(arts) {
   const vids = arts.filter((a) => a.video);
+  // hero 自動跟著最新一篇剪了循環片的手記走（arts 已依日期由新到舊排好），
+  // 上傳新影片時只要照流程放檔案、填 videoLoop，這裡不用改。
+  // 一篇都沒有就退回第一支影片的照片、不放影片。
+  const latest = vids.find((a) => a.videoLoop);
+  const heroImg = latest ? latest.image : 'fu-tan-bang.jpg';
   const body = `
 ${hero({
-  img: 'fu-tan-bang.jpg',
-  pos: '30% 30%',
+  img: heroImg,
+  pos: latest ? latest.pos || 'center 30%' : '30% 30%',
   kicker: '師父示範',
   title: '影片',
   sub: clauses('一個動作裡   蘊含豐富細微變化的打法'),
+  video: loopOf(latest),
 })}
 <section class="sec sec--paper2">
   <div class="wrap">
@@ -1243,9 +1274,9 @@ ${ctaBand()}
     titleTag: '詠春示範影片｜黃英哲師父親自示範｜鷹捷詠春',
     desc: `黃英哲師父的詠春示範影片，共 ${vids.length} 支：${vids.map((a) => `〈${a.title}〉`).join('、')}。`,
     url: '/videos/',
-    image: '/assets/img/fu-tan-bang.jpg',
+    image: `/assets/img/${heroImg}`,
     body,
-    preload: 'fu-tan-bang.jpg',
+    preload: heroImg,
     crumbs: [{ name: '影片', url: '/videos/' }],
     ld: [
       {
@@ -1486,7 +1517,7 @@ copyDir(path.join(ROOT, 'static'), DIST);
 write('index.html', pageIntro());
 write('home/index.html', pageHome(arts));
 write('about/index.html', pageAbout());
-write('classes/index.html', pageClasses());
+write('classes/index.html', pageClasses(arts));
 write('writings/index.html', pageWritings(arts));
 write('videos/index.html', pageVideos(arts));
 arts.forEach((a, i) => write(`writings/${a.slug}/index.html`, pageArticle(a, arts[i + 1], arts[i - 1], arts)));
